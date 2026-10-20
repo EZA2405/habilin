@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import webbrowser
 from pathlib import Path
 
 from .core import EstateAgent, Rejected
@@ -23,6 +24,7 @@ def main():
     parser.add_argument("--directory", type=Path, default=Path(".runtime"))
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--live-jev", action="store_true")
+    parser.add_argument("--no-open", action="store_true", help="Do not open the browser signed in to the demo")
     parser.add_argument("--case", default="EST-001", help="Case for the owner code: EST-001 (Philippines) or EST-UK-001 (United Kingdom)")
     args = parser.parse_args()
     if args.command == "sessions":
@@ -37,6 +39,8 @@ def main():
         print(f"Habilin at http://127.0.0.1:{server.server_port} · ALL INSTITUTIONS SIMULATED", flush=True)
         link = "&".join(f"{role}={token}" for role, token in server.tokens.items())
         print(f"Demo link (all three roles): http://127.0.0.1:{server.server_port}/#{link}", flush=True)
+        if not args.no_open:
+            webbrowser.open(f"http://127.0.0.1:{server.server_port}/#{link}")
         print(f"Owner one-time code, in a separate terminal: python3 -m habilin code --directory {args.directory} --case EST-001 (or EST-UK-001)", flush=True)
         try:
             server.serve_forever()

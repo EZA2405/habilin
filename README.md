@@ -58,7 +58,7 @@ python3 -m habilin serve --port 8787              # offline fixture routing
 python3 -m habilin serve --port 8787 --live-jev   # live Jev/TypeSafe classification
 ```
 
-The server prints a **demo link** that signs in all three roles at once. The tokens travel in the URL fragment (never sent to the server as a URL) and are removed from the address bar on load; the page keeps them in this browser tab's session storage until **Sign out** or the tab closes (local demo only). Switch roles with the **Acting as** tabs; switch between the **Philippines** and **United Kingdom** cases in the left sidebar. Every request still carries that role's own token, and the server enforces role and approval checks.
+The server opens your browser already signed in (use `--no-open` to skip) and prints the same **demo link**, which signs in all three roles at once. The tokens travel in the URL fragment (never sent to the server as a URL) and are removed from the address bar on load; the page keeps them in this browser tab's session storage until **Sign out** or the tab closes (local demo only). Switch roles with the **Acting as** tabs; switch between the **Philippines** and **United Kingdom** cases in the left sidebar. Every request still carries that role's own token, and the server enforces role and approval checks.
 
 Walkthrough, for either case:
 
