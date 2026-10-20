@@ -7,11 +7,12 @@ An estate case agent that obtains missing evidence, prepares a reviewed tax pack
 | # | Document | Link |
 |---|---|---|
 | 01 | Technical documentation | [docs/Habilin-Technical-Document.docx](docs/Habilin-Technical-Document.docx) · architecture summary in [§2](#2-system-architecture) |
-| 02 | Presentation deck (10 slides, ~8:40) | [submission/Habilin-Presentation.pdf](submission/Habilin-Presentation.pdf) |
+| 02 | Presentation deck | [submission/Habilin-Deck.pdf](submission/Habilin-Deck.pdf) |
 | 03 | Demo video (1:35) | [submission/InternationalAI-Habilin-DemoVideo.mp4](submission/InternationalAI-Habilin-DemoVideo.mp4) · [captions](submission/Habilin-DemoVideo.srt) |
-| 04 | Source code, deployment and tests | this repository · [§4](#4-installation-and-execution) · [§5](#5-testing) |
+| 04 | Source code, deployment and tests | [this repository](https://github.com/EZA2405/habilin) · [§4](#4-installation-and-execution) · [§5](#5-testing) |
 | 05 | Security self-assessment | [docs/SECURITY.md](docs/SECURITY.md) · [Word version](docs/Habilin-Security-Self-Assessment.docx) |
 | 06 | Execution evidence (sandbox logs) | [submission/execution-evidence.json](submission/execution-evidence.json) · [test results](submission/test-results.json) · [screenshots](submission/screenshots/) · [report](submission/Habilin-Execution-Evidence.docx) |
+| 07 | Submission timeline and SHA-256 hashes | [submission/SUBMISSION_TIMELINE.md](submission/SUBMISSION_TIMELINE.md) |
 
 ## 1 Project overview
 
