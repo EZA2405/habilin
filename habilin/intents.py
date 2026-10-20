@@ -22,7 +22,7 @@ def classify(text, live=False):
     if not isinstance(text, str) or not 1 <= len(text.strip()) <= 1500:
         raise ValueError("Enter a message of 1 to 1500 characters.")
     # Normalize look-alike digits and drop invisible format characters before looking for a code.
-    compact = "".join(ch for ch in unicodedata.normalize("NFKC", text) if not (ch.isspace() or ch == "-" or unicodedata.category(ch) == "Cf"))
+    compact = "".join(ch for ch in unicodedata.normalize("NFKC", text) if not (ch.isspace() or unicodedata.category(ch) in ("Cf", "Pd")))
     if re.search(r"(?<!\d)\d{6}(?!\d)", compact):
         return {"intent": "unsafe", "source": "local_sensitive_input_guard"}
     if not live:

@@ -19,14 +19,14 @@ def _tokens(pattern, text):
     return {t.replace(",", "").rstrip(".") for t in re.findall(pattern, text)}
 
 
-RISKY = ("code", "otp", "pin", "password", "personal", "transfer", "send ", "gcash", "account number", "token")
+RISKY = re.compile(r"\b(codes?|otp|pins?|passwords?|personal|transfers?|send|gcash|account numbers?|tokens?)\b", re.I)
 
 
 def _grounded(text, facts):
-    """Reject a reply that introduces any number, email, link or risky request absent from the facts."""
+    """Reject a reply that mentions codes or money movement, or adds any number, email or link absent from the facts."""
     numbers, contacts = r"\d[\d,.]*", r"[\w.+-]+@[\w-]+\.[\w.]+|https?://\S+"
-    lower, known = text.lower(), facts.lower()
-    if any(word in lower and word not in known for word in RISKY):
+    # A rewording never needs to mention codes or money movement; the fixed reply does that.
+    if RISKY.search(text):
         return False
     return _tokens(numbers, text) <= _tokens(numbers, facts) and _tokens(contacts, text) <= _tokens(contacts, facts)
 
