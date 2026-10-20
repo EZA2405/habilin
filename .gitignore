@@ -1,0 +1,21 @@
+# Public repo: publish only the product, its tests and sourced research.
+/*
+!/.gitignore
+!/README.md
+!/VISION.md
+!/AGENT_SPEC.md
+!/AGENTS.md
+!/CLAUDE.md
+!/habilin/
+!/tests/
+!/scripts/
+!/research/
+!/ESTATE_PH_RESEARCH.md
+!/HABILIN_PH_LEGAL_EVIDENCE.md
+!/ESTATE_INTERNATIONAL_RESEARCH.md
+!/ACTIONABILITY_RESEARCH.md
+__pycache__/
+*.pyc
+.env
+.DS_Store
+node_modules/
