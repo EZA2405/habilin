@@ -60,7 +60,10 @@ const {chromium} = require('playwright');
       }
     }
     await page.goto(link);
-    await page.locator('[data-person=operator]').click();
+    await page.screenshot({path: screenshots + '/tour.png'});
+    for (let i = 0; i < 4; i++) await page.locator('#intro-next').click();
+    assert.equal(await page.locator('#intro-next').textContent(), 'Start as Maria');
+    await page.locator('#intro-next').click();
     await page.waitForFunction(() => document.body.dataset.role === 'operator');
     await stage('missing_record');
     await fits(page);
@@ -100,6 +103,9 @@ const {chromium} = require('playwright');
     const mobile = await browser.newPage({viewport: {width: 390, height: 844}, reducedMotion: 'reduce'});
     mobile.on('pageerror', error => errors.push(error.message));
     await mobile.goto(link);
+    await fits(mobile);
+    await mobile.screenshot({path: screenshots + '/mobile-tour.png'});
+    await mobile.locator('#intro-skip').click();
     await mobile.locator('[data-person=operator]').click();
     await mobile.waitForFunction(() => document.body.dataset.role === 'operator');
     await fits(mobile);

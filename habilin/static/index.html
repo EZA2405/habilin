@@ -25,11 +25,74 @@
       <span id="who-name"></span>
       <button type="button" id="switch-user" class="link-button">Switch user</button>
     </div>
+    <button type="button" id="tour-open" class="link-button">How it works</button>
     <span class="sandbox" title="No real government, bank or registry is connected">Simulated institutions</span>
   </div>
 </header>
 
 <main id="overview">
+  <section id="intro" class="intro" hidden aria-roledescription="carousel" aria-label="How Habilin works">
+    <div class="intro-card">
+      <div class="intro-slide" data-slide="0">
+        <div class="intro-art art-problem">
+          <span class="doc">Death certificate</span><span class="doc">Title copy</span><span class="doc">Tax form 1801</span><span class="doc">Bank receipt</span><span class="doc">eCAR</span>
+        </div>
+        <p class="turn">Meet Habilin</p>
+        <h2>Settling an estate is months of paperwork</h2>
+        <p>When someone dies, the family must gather records, compute the estate tax, file it and pay it, usually without knowing where to start. Habilin is an agent that does this legwork for one estate case, from evidence to verified receipts.</p>
+      </div>
+      <div class="intro-slide" data-slide="1" hidden>
+        <div class="intro-art art-mismatch">
+          <div><small>Family said</small><b>100%</b></div>
+          <span class="arrow" aria-hidden="true">≠</span>
+          <div class="found"><small>Official title says</small><b>50%</b></div>
+        </div>
+        <p class="turn">It does the work</p>
+        <h2>It finds the records and catches mistakes</h2>
+        <p>Habilin requests the official title copy, notices the owner held only half the property, and fixes the record before any tax is computed. Fixed code, not the AI, does every peso of the math.</p>
+      </div>
+      <div class="intro-slide" data-slide="2" hidden>
+        <div class="intro-art art-people">
+          <div><span class="avatar">MR</span><b>Maria</b><small>Runs the case</small></div>
+          <div><span class="avatar">JC</span><b>Atty. Cruz</b><small>Checks the tax</small></div>
+          <div><span class="avatar">AS</span><b>Ana</b><small>Approves with a code</small></div>
+        </div>
+        <p class="turn">People stay in charge</p>
+        <h2>Nothing is filed or paid without two approvals</h2>
+        <p>A lawyer or CPA confirms the exact amount. Then the family representative authorizes it with a one-time code. Change anything and both approvals reset.</p>
+      </div>
+      <div class="intro-slide" data-slide="3" hidden>
+        <div class="intro-art art-safe">
+          <div class="blocked"><b>✕</b>“Pay my personal account instead”</div>
+          <div class="blocked"><b>✕</b>“Read me the owner’s code”</div>
+          <div class="allowed"><b>✓</b>One payment to the official BIR payee</div>
+        </div>
+        <p class="turn">Built to refuse scams</p>
+        <h2>Money only goes to the official tax office</h2>
+        <p>Habilin pays once, to a verified payee, and checks the receipt. It ignores account numbers in messages and never asks for codes. Try to trick it in the chat.</p>
+      </div>
+      <div class="intro-slide" data-slide="4" hidden>
+        <div class="intro-art art-try">
+          <ol>
+            <li><b>1</b>Start as Maria. Press the outlined blue button.</li>
+            <li><b>2</b>When Habilin says it is someone else’s turn, hand off to them.</li>
+            <li><b>3</b>As Ana, get the one-time code from a separate terminal. The page shows the exact command.</li>
+          </ol>
+        </div>
+        <p class="turn">Your turn</p>
+        <h2>You will play all three people</h2>
+        <p>This is a sandbox. The people are synthetic and every government office, bank and registry is simulated, so nothing real is filed or paid. A full case takes about two minutes.</p>
+      </div>
+      <div class="intro-nav">
+        <button type="button" id="intro-skip" class="link-button">Skip</button>
+        <div class="dots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="intro-buttons">
+          <button type="button" id="intro-back" class="secondary">Back</button>
+          <button type="button" id="intro-next" class="primary">Next</button>
+        </div>
+      </div>
+    </div>
+  </section>
   <section id="portal" class="portal" hidden>
     <h1>Sign in to the estate case</h1>
     <p class="lede">Each person sees only their part. Habilin does the paperwork in between.</p>

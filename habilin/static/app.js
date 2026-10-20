@@ -178,8 +178,28 @@ async function tool(name, args, after) {
   try { await api("/api/tool", {name, args}); await refresh(); if (after) message(after, "agent"); }
   catch (e) { error(e.message); } finally { busy = false; if (current) renderAction(); }
 }
+// First-visit tour: five app-style cards, replayable from "How it works".
+let slide = 0;
+function showTour() {
+  $("case-desk").hidden = true; $("role-switch").hidden = true; $("portal").hidden = true; $("intro").hidden = false; error("");
+  goSlide(0); window.scrollTo({top: 0});
+}
+function goSlide(n) {
+  const slides = document.querySelectorAll("[data-slide]");
+  slide = Math.max(0, Math.min(n, slides.length - 1));
+  slides.forEach((el, i) => { el.hidden = i !== slide; });
+  document.querySelectorAll(".dots i").forEach((d, i) => d.classList.toggle("on", i === slide));
+  $("intro-back").hidden = slide === 0;
+  $("intro-next").textContent = slide === slides.length - 1 ? "Start as Maria" : "Next";
+  $("intro-skip").hidden = slide === slides.length - 1;
+}
+function endTour(start) {
+  try { localStorage.setItem("habilin.toured", "1"); } catch {}
+  $("intro").hidden = true;
+  if (start) signIn("operator"); else showPortal("operator");
+}
 function showPortal(next) {
-  $("case-desk").hidden = true; $("role-switch").hidden = true; $("portal").hidden = false; error("");
+  $("intro").hidden = true; $("case-desk").hidden = true; $("role-switch").hidden = true; $("portal").hidden = false; error("");
   document.querySelectorAll("[data-person]").forEach((b) => b.classList.toggle("next", b.dataset.person === next));
   window.scrollTo({top: 0});
 }
@@ -259,7 +279,8 @@ $("download-packet").addEventListener("click", (e) => {
     const res = await fetch("/api/demo-session"), data = await res.json();
     if (!res.ok) throw new Error(data.error);
     tokens = data.tokens;
-    if (ROLES.includes(role)) await refresh(); else showPortal("operator");
+    let toured = false; try { toured = localStorage.getItem("habilin.toured") === "1"; } catch {}
+    if (ROLES.includes(role)) await refresh(); else if (toured) showPortal("operator"); else showTour();
   } catch (e) { error(`Could not open the demo case (${e.message || "server unavailable"}). Restart it with: python3 -m habilin serve`); }
 })();
 $("switch-user").addEventListener("click", () => showPortal());
@@ -267,3 +288,8 @@ document.querySelectorAll("[data-person]").forEach((b) => b.addEventListener("cl
 $("onb-done").addEventListener("click", () => { try { sessionStorage.setItem("habilin.onboarded." + role, "1"); } catch {} $("onboarding").hidden = true; });
 $("chat-toggle").addEventListener("click", () => toggleChat(true));
 $("chat-close").addEventListener("click", () => toggleChat(false));
+$("tour-open").addEventListener("click", showTour);
+$("intro-skip").addEventListener("click", () => endTour(false));
+$("intro-back").addEventListener("click", () => goSlide(slide - 1));
+$("intro-next").addEventListener("click", () => slide === document.querySelectorAll("[data-slide]").length - 1 ? endTour(true) : goSlide(slide + 1));
+$("intro").addEventListener("keydown", (e) => { if (e.key === "ArrowRight") $("intro-next").click(); if (e.key === "ArrowLeft" && slide) goSlide(slide - 1); });
