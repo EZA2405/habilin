@@ -4,7 +4,7 @@ Hackathon mode. Deadline 20 Oct 2026, 23:59 UTC+8. Working and demoable beats co
 
 ## Product
 
-**Habilin** (working name): an active estate-settlement agent for a professional handling one simple Philippine estate-tax case. It obtains missing evidence, reconciles a clerical ownership mismatch, prepares a deterministic packet, routes professional and owner approval, submits to labelled simulated services and verifies filing and payment receipts. eCAR and title transfer remain open. Topic A fit is provisional; Topic F is excluded.
+**Habilin** (working name): an active estate-settlement agent for a professional handling one simple Philippine estate-tax case. It obtains missing evidence, reconciles a clerical ownership mismatch, prepares a deterministic packet, routes professional and owner approval, submits to labelled simulated services and verifies filing and payment receipts. eCAR and title transfer remain open. Topic B (AI Wealth Assistant) fit is provisional; Topic F is excluded.
 
 Stack: Python 3.11+ standard library, SQLite, HTML/CSS/JavaScript; Jev TypeSafe intent classification via an optional configured `mcporter` command. Offline fixture routing is labelled. No live institutional connections.
 

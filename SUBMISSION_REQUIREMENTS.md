@@ -41,6 +41,8 @@ Source: the current [organizer homepage](https://fintechathon.g-ican.com/#/en), 
 
 **Our assessment, not an organizer approval:** A is a provisional fit for a family estate's financial case administration, tax-liability budgeting and verified filing/payment workflow. A narrow estate-settlement case is not explicitly named in the published topics. B is a possible alternative if estate/wealth administration is accepted, but the published examples emphasize investments. Selling to a small legal/accounting practice alone does not establish E fit: E concerns the business's financing/cash-flow problem. Retain a clear financial workflow and select one topic consistently in the package. Organizer acceptance of estate administration under A or B remains unconfirmed; no enquiry has been sent.
 
+**Team decision (20 Oct 2026):** Topic B, AI Wealth Assistant. Habilin protects and transfers a family's inherited wealth; it does not do portfolio allocation or risk scoring.
+
 ## Judging implications
 
 - 40% concerns completing scripted tasks in a simulated environment for topics other than F.

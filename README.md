@@ -15,7 +15,7 @@ An estate case agent that obtains missing evidence, prepares a reviewed tax pack
 
 ## 1 Project overview
 
-- Track: International AI Track, Topic A — AI Personal Finance Assistant, **provisional fit**. Estate administration is not explicitly listed; organizer acceptance is unconfirmed.
+- Track: International AI Track, Topic B — AI Wealth Assistant, **provisional fit**. Estate administration is not explicitly listed; organizer acceptance is unconfirmed.
 - Team: **Team Caelus**. Member details and registration are handled privately by the team.
 - Project: Habilin, working name.
 - Scope: one synthetic Philippine resident, unmarried, post-2017 death, one investment property that is not the family home, a living co-owner, no other deductions, debts, credits or penalties. A certified title copy from a simulated Registry of Deeds shows a 50% share where the family reported 100%.
