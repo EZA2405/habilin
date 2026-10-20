@@ -7,6 +7,7 @@ import urllib.request
 from unittest.mock import patch
 
 from habilin.intents import classify
+from habilin.narrate import phrase
 from habilin.server import make_server
 from habilin.core import Principal, digest
 
@@ -117,3 +118,31 @@ class IntentTests(unittest.TestCase):
             mock=type("Result",(),{"stdout":json.dumps({"provider":"typesafe","results":[result]})})()
             with patch("habilin.intents.subprocess.run",return_value=mock):
                 self.assertEqual(classify("Do something",live=True)["intent"],"unclear")
+
+
+class PhrasingTests(unittest.TestCase):
+    facts = "Filing is verified. The PHP 150,000 payment is pending."
+
+    def model_says(self, text):
+        body = json.dumps({"choices": [{"message": {"content": text}}]}).encode()
+        response = type("Response", (), {"read": lambda self, *a: body, "__enter__": lambda self: self, "__exit__": lambda self, *a: None})()
+        return patch("habilin.narrate.urllib.request.urlopen", return_value=response)
+
+    def test_without_key_returns_fixed_reply_and_no_call(self):
+        with patch.dict("os.environ", {}, clear=True), patch("habilin.narrate.urllib.request.urlopen") as call:
+            self.assertEqual(phrase(self.facts, "status?"), (self.facts, None))
+            call.assert_not_called()
+
+    def test_grounded_rewording_is_used(self):
+        with patch.dict("os.environ", {"OPENROUTER_API_KEY": "test"}), self.model_says("Na-file na. Pending pa ang PHP 150,000 na bayad."):
+            self.assertEqual(phrase(self.facts, "kumusta?")[0], "Na-file na. Pending pa ang PHP 150,000 na bayad.")
+
+    def test_invented_number_or_contact_falls_back(self):
+        for text in ["You paid PHP 15,000.", "Send it to help@example.com.", "Pay at https://pay.example"]:
+            with self.subTest(text=text), patch.dict("os.environ", {"OPENROUTER_API_KEY": "test"}), self.model_says(text):
+                self.assertEqual(phrase(self.facts, "status?"), (self.facts, None))
+
+    def test_model_failure_falls_back(self):
+        with patch.dict("os.environ", {"OPENROUTER_API_KEY": "test"}), \
+             patch("habilin.narrate.urllib.request.urlopen", side_effect=OSError):
+            self.assertEqual(phrase(self.facts, "status?"), (self.facts, None))

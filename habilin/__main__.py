@@ -12,7 +12,7 @@ def load_env(path=Path(".env.local")):
     if path.exists():
         for line in path.read_text().splitlines():
             key, sep, value = line.strip().partition("=")
-            if sep and key and not key.startswith("#"):
+            if sep and key and value.strip() and not key.startswith("#"):
                 os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
 
 

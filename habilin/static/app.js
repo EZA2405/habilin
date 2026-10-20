@@ -163,7 +163,7 @@ async function refresh() {
 
 async function send(text) {
   if (busy) return; busy = true; $("send").disabled = true; $("next-action").disabled = true; error(""); message(text, "user"); $("message").value = "";
-  try { const data = await api("/api/message", {text}); message(data.reply, "agent", data.classification.source); await refresh(); }
+  try { const data = await api("/api/message", {text}); message(data.reply, "agent", [data.classification.source, data.phrased_by].filter(Boolean).join(" · ")); await refresh(); }
   catch (e) { error(e.message); message(e.message, "agent"); }
   finally { busy = false; $("send").disabled = false; if (current) renderAction(); }
 }

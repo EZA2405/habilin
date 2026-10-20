@@ -1,6 +1,7 @@
 """Loopback-only demo server. Bearer credentials bind identities on the server."""
 
 import json
+import os
 import secrets
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -8,6 +9,7 @@ from urllib.parse import urlsplit
 
 from .core import CASE_ID, SEEDS, EstateAgent, Principal, Rejected, digest
 from .intents import classify, reply
+from .narrate import phrase
 
 STATIC = Path(__file__).with_name("static")
 
@@ -77,7 +79,7 @@ def make_server(directory, port=8765, live=False):
                 case = agent.view(principal)
                 if path == "/api/state":
                     self.respond(200, {"case": case, "packet_hash": digest(case["packet"]) if case["packet"] else None,
-                                       "mode": "Live Jev · TypeSafe" if live else "Offline fixture routing"})
+                                       "mode": ("Live Jev · TypeSafe" + (" + OpenRouter replies" if os.environ.get("OPENROUTER_API_KEY") else "")) if live else "Offline fixture routing"})
                 elif path == "/api/packet":
                     self.respond(200, {"packet": case["packet"], "filing_receipt": case["filing_receipt"],
                                        "payment_receipt": case["payment_receipt"], "open_steps": case["open_steps"], "simulated": True})
@@ -102,7 +104,11 @@ def make_server(directory, port=8765, live=False):
                     case = agent.advance(principal) if classification["intent"] == "progress" else agent.view(principal)
                     with agent.connection() as db:
                         agent._event(db, principal, "classify_intent", json.dumps(classification))
-                    self.respond(200, {"reply": reply(classification["intent"], case), "classification": classification})
+                    answer, phrased_by = reply(classification["intent"], case), None
+                    # Security-relevant replies stay fixed; other replies may be reworded by the optional model.
+                    if live and classification["intent"] not in {"unsafe", "correction"}:
+                        answer, phrased_by = phrase(answer, body["text"])
+                    self.respond(200, {"reply": answer, "classification": classification, "phrased_by": phrased_by})
                 elif self.path == "/api/tool":
                     if set(body) != {"name", "args"} or not isinstance(body["args"], dict) or not isinstance(body["name"], str):
                         raise Rejected("Use a named tool with explicit arguments.")
