@@ -100,6 +100,8 @@ Start with [submission/START_HERE.md](submission/START_HERE.md) for the deck, do
 
 ## 7 Security notes
 
+Full self-assessment: [docs/SECURITY.md](docs/SECURITY.md). Official-template documents: [technical document](docs/Habilin-Technical-Document.docx), [security self-assessment](docs/Habilin-Security-Self-Assessment.docx).
+
 Roles come from server-held bearer tokens, never a requested role in chat/JSON. Automatic tools collect/prepare within a case. A professional explicitly confirms the exact packet. The owner explicitly confirms filing plus the exact amount, purpose and fixed official payee with a five-minute, single-use, packet-bound code; five wrong attempts exhaust it. Direct tool calls repeat the checks. A safety lock blocks mutations. No new-payee, limit-raising, arbitrary transfer, export-all-cases, secret-reading or OTP retrieval HTTP tool exists.
 
 Filing and payment keys are deterministic hashes of the authorized packet. SQLite transactions and unique ledger keys prevent repeated debits under concurrent requests. A lost filing response causes an unknown state; an explicit status query recovers the existing receipt. A pending or failed payment never supplies a settled receipt. A failed sandbox payment stays open for operator reconciliation; automatic refund and arbitrary retry are outside this prototype.
