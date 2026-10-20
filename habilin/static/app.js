@@ -55,11 +55,15 @@ function renderAction() {
   const actions = {missing_record: "Get evidence & prepare packet", ownership_conflict: "Resolve & prepare packet", ready_to_prepare: "Prepare tax packet",
                    ready_to_submit: "File the approved packet", filing_unknown: "Check filing & pay", filed: "Make the payment", payment_pending: "Verify payment"};
   const action = canProgress && !asking && actions[current.stage];
-  $("next-action").hidden = review || asking;
-  $("next-action").textContent = action || "Check case status";
-  $("next-action").dataset.action = action ? "progress" : "status";
+  // Who acts next; the main button switches to that person so the demo never stalls.
+  const needed = {await_professional: "professional", await_owner: "owner"}[current.stage]
+    || (actions[current.stage] && current.role === "professional" ? "operator" : null);
+  const handoff = needed && needed !== current.role && !current.locked;
+  $("next-action").hidden = (review || asking) && !handoff;
+  $("next-action").textContent = handoff ? `Continue as ${needed[0].toUpperCase() + needed.slice(1)}` : action || "Check case status";
+  $("next-action").dataset.action = handoff ? `switch:${needed}` : action ? "progress" : "status";
   $("next-action").disabled = busy;
-  const wait = {await_professional: "Waiting for the professional.", await_owner: "Waiting for the owner."};
+  const wait = {await_professional: "Next: a professional reviews the exact amount.", await_owner: "Next: the owner approves with a one-time code."};
   $("action-help").textContent = review ? "" : asking ? "A yes sends the case to a professional."
     : current.locked && current.stage !== "closed" ? "Locked by the owner."
     : wait[current.stage] || "";
@@ -182,7 +186,12 @@ document.querySelectorAll("[data-case]").forEach((b) => b.addEventListener("clic
   try { await refresh(); message(`Switched to ${current.label}. Same agent, ${place().authority} rules.`, "agent"); } catch (e) { error(e.message); }
 }));
 document.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
-$("next-action").addEventListener("click", () => { if (!busy && current) send($("next-action").dataset.action === "progress" ? "Progress this estate case" : "Check case status"); });
+$("next-action").addEventListener("click", () => {
+  const action = $("next-action").dataset.action;
+  if (busy || !current) return;
+  if (action.startsWith("switch:")) { useRole(action.slice(7)); window.scrollTo({top: 0}); return; }
+  send(action === "progress" ? "Progress this estate case" : "Check case status");
+});
 $("answer-no").addEventListener("click", () => tool("answer_question", {answer: false}, "Thanks. That deduction does not apply, so I can prepare the packet."));
 $("answer-yes").addEventListener("click", () => tool("answer_question", {answer: true}, "Thanks. That changes the tax, so I stopped the case for a professional."));
 $("message-form").addEventListener("submit", (e) => { e.preventDefault(); send($("message").value); });
