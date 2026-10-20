@@ -1,18 +1,20 @@
 const ROLES = ["operator", "professional", "owner"];
 const PLACES = {
-  PH: {country: "PHILIPPINE ESTATE TAX", currency: "PHP", locale: "en-PH", issuer: "Registry of Deeds", record: "title copy", authority: "BIR",
+  PH: {country: "Philippine estate tax", currency: "PHP", locale: "en-PH", issuer: "Registry of Deeds", record: "title copy", authority: "BIR",
        valueLabel: "Property value at death (higher of BIR zonal or assessor value)",
        taxFine: "Restricted illustration: resident, unmarried, property is not the family home, co-owner alive, no other deductions or credits. Rule: NIRC sections 84 and 86 as amended by RA 10963; RR 12-2018. *A professional confirms the deadline and any relief.",
        penaltyLabel: "Penalty if filed one year late (25% + 12%/yr)",
        impactFine: "Penalty rule: NIRC sections 248 and 249, checked against BIR RMC 33-2026's worked example. Compromise penalties are excluded.",
        officeFine: "Mailboxes come from BIR's official contact directory (124 district offices, checked 20 Oct 2026). Drafts are never sent by the demo; a person reviews and sends them, and original documents are presented at the office."},
-  UK: {country: "UK INHERITANCE TAX", currency: "GBP", locale: "en-GB", issuer: "HM Land Registry", record: "title register", authority: "HMRC",
+  UK: {country: "UK inheritance tax", currency: "GBP", locale: "en-GB", issuer: "HM Land Registry", record: "title register", authority: "HMRC",
        valueLabel: "Property value at death",
        taxFine: "Restricted illustration: England, unmarried, no lifetime gifts or reliefs, home not passing to children or grandchildren. Rule: gov.uk Inheritance Tax, 40% above the £325,000 threshold, paid by the end of the sixth month after death.",
        penaltyLabel: "Interest if paid one year late (7.75%/yr)",
        impactFine: "HMRC late payment interest: 7.75% from 9 January 2026 (gov.uk interest rates page).",
        officeFine: "Next step per gov.uk: HMRC sends a code after payment, then the executor applies for probate. No mailbox is used for this step."},
 };
+const TONES = {completed: "good", filed: "good", closed: "good", ready_to_submit: "good", ownership_conflict: "warn", blocked_professional: "warn", filing_unknown: "warn",
+               await_professional: "action", await_owner: "action", missing_record: "action", payment_pending: "action"};
 let tokens = {};
 let role = null;
 let caseId = "EST-001";
@@ -55,11 +57,11 @@ function renderAction() {
   const review = !$("approval").hidden;
   const asking = !$("question").hidden;
   const canProgress = ["operator", "owner"].includes(current.role) && !current.locked;
-  const actions = {missing_record: "Get evidence & prepare packet ↗", ownership_conflict: "Resolve & prepare packet ↗", ready_to_prepare: "Prepare tax packet ↗",
-                   ready_to_submit: "File the approved packet ↗", filing_unknown: "Check filing & pay ↗", filed: "Make the payment ↗", payment_pending: "Verify payment ↗"};
+  const actions = {missing_record: "Get evidence & prepare packet", ownership_conflict: "Resolve & prepare packet", ready_to_prepare: "Prepare tax packet",
+                   ready_to_submit: "File the approved packet", filing_unknown: "Check filing & pay", filed: "Make the payment", payment_pending: "Verify payment"};
   const action = canProgress && !asking && actions[current.stage];
   $("next-action").hidden = review || asking;
-  $("next-action").textContent = action || "Check case status ↗";
+  $("next-action").textContent = action || "Check case status";
   $("next-action").dataset.action = action ? "progress" : "status";
   $("next-action").disabled = busy;
   const wait = {await_professional: "Switch to the Professional tab to review.", await_owner: "Switch to the Owner tab to approve."};
@@ -93,16 +95,16 @@ async function refresh() {
   $("login").hidden = true; $("case-desk").hidden = false; $("logout").hidden = false; $("role-switch").hidden = false;
   document.querySelectorAll("[data-role]").forEach((b) => { b.disabled = !tokens[b.dataset.role]; b.classList.toggle("active", b.dataset.role === role); b.setAttribute("aria-selected", b.dataset.role === role); });
   document.querySelectorAll("[data-case]").forEach((b) => b.classList.toggle("active", b.dataset.case === caseId));
-  $("crumb-case").textContent = current.id; $("case-eyebrow").textContent = `CASE ${current.id} · ${p.country}`;
-  $("case-name").textContent = current.label; $("model-mode").textContent = data.mode;
+  $("crumb-case").textContent = current.id; $("case-eyebrow").textContent = p.country;
+  $("case-name").textContent = current.label.replace(" · synthetic", ""); $("model-mode").textContent = data.mode;
   const [title, description, chip, step] = stageText();
-  $("stage-title").textContent = title; $("stage-description").textContent = description; $("stage-chip").textContent = chip;
-  document.querySelectorAll("[data-step]").forEach((el, i) => { el.className = i < step ? "done" : i === step ? "current" : ""; el.querySelector("i").textContent = i < step ? "✓" : "—"; });
+  $("stage-title").textContent = title; $("stage-description").textContent = description; $("stage-chip").textContent = chip; $("stage-chip").dataset.tone = TONES[current.stage] || (current.question ? "action" : "");
+  document.querySelectorAll("[data-step]").forEach((el, i) => { el.className = i < step ? "done" : i === step ? "current" : ""; el.querySelector("i").textContent = i < step ? "✓" : i + 1; });
   $("locked-banner").hidden = !current.locked || current.stage === "closed";
   $("due-date").textContent = packet ? `Filing deadline · ${new Date(packet.nominal_due_date + "T00:00").toLocaleDateString(p.locale, {day: "numeric", month: "short", year: "numeric"})}*` : "Filing deadline · set when the packet is prepared";
   $("question").hidden = !(current.question && current.stage === "ready_to_prepare" && ["operator", "owner"].includes(current.role) && !current.locked);
   // Tax
-  $("tax-total").textContent = money(packet?.tax_centavos); $("value-label").textContent = p.valueLabel;
+  $("tax-total").textContent = money(packet?.tax_centavos); $("tax-total").classList.toggle("empty", !packet); $("value-label").textContent = p.valueLabel;
   $("property-value").textContent = current.stage === "closed" ? "—" : money(packet?.property_value_centavos ?? current.property_value_centavos);
   $("verified-share").textContent = packet ? `${packet.share_bps / 100}%` : "—"; $("gross").textContent = money(packet?.gross_centavos);
   $("allowance-label").textContent = packet?.allowance_label || "Allowance"; $("allowance").textContent = money(packet?.allowance_centavos);
