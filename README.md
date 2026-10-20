@@ -2,10 +2,21 @@
 
 An estate case agent that obtains missing evidence, prepares a reviewed tax packet, executes an authorized sandbox filing and verifies the filing and payment receipts.
 
+## Submission Documents
+
+| # | Document | Link |
+|---|---|---|
+| 01 | Technical documentation | [docs/Habilin-Technical-Document.docx](docs/Habilin-Technical-Document.docx) · architecture summary in [§2](#2-system-architecture) |
+| 02 | Presentation deck (10 slides, ~8:40) | [submission/Habilin-Presentation.pdf](submission/Habilin-Presentation.pdf) |
+| 03 | Demo video (1:35) | [submission/InternationalAI-Habilin-DemoVideo.mp4](submission/InternationalAI-Habilin-DemoVideo.mp4) · [captions](submission/Habilin-DemoVideo.srt) |
+| 04 | Source code, deployment and tests | this repository · [§4](#4-installation-and-execution) · [§5](#5-testing) |
+| 05 | Security self-assessment | [docs/SECURITY.md](docs/SECURITY.md) · [Word version](docs/Habilin-Security-Self-Assessment.docx) |
+| 06 | Execution evidence (sandbox logs) | [submission/execution-evidence.json](submission/execution-evidence.json) · [test results](submission/test-results.json) · [screenshots](submission/screenshots/) · [report](submission/Habilin-Execution-Evidence.docx) |
+
 ## 1 Project overview
 
 - Track: International AI Track, Topic A — AI Personal Finance Assistant, **provisional fit**. Estate administration is not explicitly listed; organizer acceptance is unconfirmed.
-- Team: **TEAM NAME TO COMPLETE**. Member details and registration are handled privately by the team.
+- Team: **Team Caelus**. Member details and registration are handled privately by the team.
 - Project: Habilin, working name.
 - Scope: one synthetic Philippine resident, unmarried, post-2017 death, one investment property that is not the family home, a living co-owner, no other deductions, debts, credits or penalties. A certified title copy from a simulated Registry of Deeds shows a 50% share where the family reported 100%.
 - Grounding: every legal rule, office mailbox and statistic cites a primary source. See [VISION.md](VISION.md), [research/PH_ESTATE_LEGAL_SOURCES.md](research/PH_ESTATE_LEGAL_SOURCES.md) and [research/PH_OFFICE_DIRECTORY.md](research/PH_OFFICE_DIRECTORY.md). Office routing uses `habilin/data/bir_rdos.json`, built from BIR's official contact directory (124 district offices, checked 20 October 2026).
@@ -39,6 +50,8 @@ Live semantic routing additionally needs a configured `mcporter` command and Jev
 
 Live calls send only the supplied message and a fixed synthetic intent catalog; they do not send the case database or approval code. The six-digit input guard prevents an ordinary pasted code being sent to Jev. It is not a general personal-data detector: enter synthetic messages only.
 
+Optional: with `--live-jev`, `OPENROUTER_API_KEY` (and optionally `OPENROUTER_MODEL`) lets OpenRouter reword the fixed replies. It receives the user's message and the recorded case facts; it never chooses actions or amounts. Without the key, the fixed replies are used.
+
 For a machine without an existing MCP connection, install Node.js 20+ and configure the optional live adapter using the installed CLI's supported commands:
 
 ```sh
@@ -58,7 +71,7 @@ python3 -m habilin serve --port 8787              # offline fixture routing
 python3 -m habilin serve --port 8787 --live-jev   # live Jev/TypeSafe classification
 ```
 
-The server opens your browser straight into the case desk (use `--no-open` to skip). If the port is taken by another app it picks a free one and prints the address. There is no sign-in screen: this is a local demo where one screen plays all three people, so the page fetches the three role tokens from `/api/demo-session`, which answers only on the loopback host and rejects foreign `Host` or `Origin` headers. Pick a person on the sign-in screen (Maria Reyes, operator; Atty. Jose Cruz, professional; Ana Santos, family representative). The main button hands the case to whoever acts next, and **Switch user** returns to the sign-in screen. Switch cases with the **PH / UK** switcher at the top. **Print summary** gives a one-page case summary to print or save as PDF. Every request still carries that role's own token, the server enforces role and approval checks, and owner approvals still need the one-time code from a separate terminal.
+The server opens your browser straight into the case desk (use `--no-open` to skip). If the port is taken by another app it picks a free one and prints the address. This is a local demo where one screen plays all three people: the page fetches the three role tokens from `/api/demo-session`, which answers only on the loopback host and rejects foreign `Host` or `Origin` headers. Pick a person on the sign-in screen (Maria Reyes, operator; Atty. Jose Cruz, professional; Ana Santos, family representative). The main button hands the case to whoever acts next, and **Switch user** returns to the sign-in screen. Switch cases with the **PH / UK** switcher at the top. **Print summary** gives a one-page case summary to print or save as PDF. Every request still carries that role's own token, the server enforces role and approval checks, and owner approvals still need the one-time code from a separate terminal.
 
 Walkthrough, for either case:
 

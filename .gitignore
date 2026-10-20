@@ -21,3 +21,14 @@ __pycache__/
 .env
 .DS_Store
 node_modules/
+!/SUBMISSION_REQUIREMENTS.md
+!/submission/
+/submission/*
+!/submission/START_HERE.md
+!/submission/Habilin-Presentation.pdf
+!/submission/InternationalAI-Habilin-DemoVideo.mp4
+!/submission/Habilin-DemoVideo.srt
+!/submission/Habilin-Execution-Evidence.docx
+!/submission/execution-evidence.json
+!/submission/test-results.json
+!/submission/screenshots/

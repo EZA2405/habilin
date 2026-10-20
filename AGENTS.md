@@ -1,6 +1,6 @@
 # FinTechathon 2026 build
 
-Hackathon mode. Deadline 20 Oct 2026, 23:59 UTC+8. Feature freeze 18 Oct. Working and demoable beats complete.
+Hackathon mode. Deadline 20 Oct 2026, 23:59 UTC+8. Working and demoable beats complete.
 
 ## Product
 

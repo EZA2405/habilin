@@ -16,7 +16,7 @@ with ZipFile(OUT/'Habilin-Source.zip','w',ZIP_DEFLATED) as archive:
     for name in ['START_HERE.md','Habilin-Idea-Brief.md','REVIEW_NOTES.md','template_requirements.json']:
         archive.write(OUT/name,'Habilin/submission/'+name)
 
-required=['Registration-TO-FILL.xlsx','Habilin-Technical-Document.docx','Habilin-Presentation.pptx',
+required=['Registration-TO-FILL.xlsx','Habilin-Technical-Document.docx','Habilin-Presentation.pptx','Habilin-Presentation.pdf',
           'InternationalAI-Habilin-DemoVideo.mp4','Habilin-Security-Self-Assessment.docx',
           'Habilin-Execution-Evidence.docx','Habilin-Demo-Video-Guide.docx','Habilin-Source.zip',
           'Habilin-DemoVideo.srt','Habilin-Demo-Script.md','Habilin-Presentation-Speaker-Notes.md',
