@@ -219,3 +219,35 @@ footer { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wr
 .basis summary::before { content: "+ "; }
 .basis[open] summary::before { content: "− "; }
 .basis p { margin-top: 8px; font-size: 12.5px; line-height: 1.5; color: var(--ink-3); }
+
+/* Sign-in portal */
+.portal { max-width: 1080px; margin: 0 auto; padding: 72px 0 48px; }
+.portal h1 { font-size: 44px; line-height: 1.08; letter-spacing: -0.03em; font-weight: 700; }
+.lede { margin-top: 12px; font-size: 18px; color: var(--ink-2); }
+.people { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 36px; }
+.people button { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 24px; text-align: left; border: 1px solid transparent; border-radius: 18px; background: var(--surface); box-shadow: var(--shadow); transition: transform 160ms var(--ease-out), border-color 160ms ease; }
+.people button:active { transform: scale(0.98); }
+@media (hover: hover) and (pointer: fine) { .people button:hover { border-color: var(--line-strong); } }
+.people button.next { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.12), var(--shadow); }
+.people b { margin-top: 12px; font-size: 18px; font-weight: 600; }
+.role-name { font-size: 14px; font-weight: 500; color: var(--accent); }
+.people small { margin-top: 6px; font-size: 14px; line-height: 1.4; color: var(--ink-2); }
+.avatar { display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--ink); color: #fff; font-size: 14px; font-weight: 600; letter-spacing: 0; }
+.how { list-style: none; margin: 40px 0 0; padding: 0; display: grid; gap: 14px; }
+.how li { display: flex; gap: 14px; align-items: baseline; font-size: 16px; color: var(--ink-2); }
+.how b { display: inline-grid; place-items: center; flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--sunken); color: var(--ink); font-size: 13px; }
+.who { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; }
+.who .avatar { width: 28px; height: 28px; font-size: 11px; }
+.link-button { border: 0; background: none; color: var(--accent); font-size: 13px; padding: 4px; }
+#print-view { display: none; }
+@media print {
+  .topbar, main, .skip { display: none !important; }
+  body { background: #fff; }
+  #print-view { display: block; padding: 32px; font-size: 13px; color: #000; }
+  #print-view h1 { font-size: 24px; margin-bottom: 4px; }
+  #print-view h2 { font-size: 15px; margin: 22px 0 8px; }
+  #print-view table { width: 100%; border-collapse: collapse; }
+  #print-view td { padding: 6px 0; border-bottom: 1px solid #ddd; }
+  #print-view td + td { text-align: right; font-variant-numeric: tabular-nums; }
+}
+@media (max-width: 760px) { .portal { padding: 32px 0; } .people { grid-template-columns: 1fr; } .portal h1 { font-size: 32px; } }

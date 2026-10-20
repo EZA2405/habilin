@@ -28,7 +28,8 @@ const {chromium} = require('playwright');
       await page.waitForFunction(() => !document.querySelector('#next-action').disabled);
     }
     async function as(role) {
-      await page.locator(`[data-role=${role}]`).click();
+      await page.locator('#switch-user').click();
+      await page.locator(`[data-person=${role}]`).click();
       await page.waitForFunction(role => document.body.dataset.role === role, role);
     }
     async function code(caseId) { console.log('OWNER_CODE_REQUIRED ' + caseId); return (await input.next()).value; }
@@ -59,6 +60,7 @@ const {chromium} = require('playwright');
       }
     }
     await page.goto(link);
+    await page.locator('[data-person=operator]').click();
     await page.waitForFunction(() => document.body.dataset.role === 'operator');
     await stage('missing_record');
     await fits(page);
@@ -93,6 +95,7 @@ const {chromium} = require('playwright');
     const mobile = await browser.newPage({viewport: {width: 390, height: 844}, reducedMotion: 'reduce'});
     mobile.on('pageerror', error => errors.push(error.message));
     await mobile.goto(link);
+    await mobile.locator('[data-person=operator]').click();
     await mobile.waitForFunction(() => document.body.dataset.role === 'operator');
     await fits(mobile);
     await mobile.screenshot({path: screenshots + '/mobile.png', fullPage: true});

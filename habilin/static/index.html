@@ -20,19 +20,30 @@
     <button type="button" data-case="EST-UK-001"><span class="flag">UK</span>Sam Taylor</button>
   </nav>
   <div class="topbar-right">
-    <div id="role-switch" class="role-switch" role="tablist" aria-label="Acting as" hidden>
-      <span class="role-label">Acting as</span>
-      <div class="segmented">
-        <button type="button" data-role="operator" role="tab">Operator</button>
-        <button type="button" data-role="professional" role="tab">Professional</button>
-        <button type="button" data-role="owner" role="tab">Owner</button>
-      </div>
+    <div id="role-switch" class="who" hidden>
+      <span id="who-avatar" class="avatar"></span>
+      <span id="who-name"></span>
+      <button type="button" id="switch-user" class="link-button">Switch user</button>
     </div>
     <span class="sandbox" title="No real government, bank or registry is connected">Simulated institutions</span>
   </div>
 </header>
 
 <main id="overview">
+  <section id="portal" class="portal" hidden>
+    <h1>Sign in to the estate case</h1>
+    <p class="lede">Each person sees only their part. Habilin does the paperwork in between.</p>
+    <div class="people">
+      <button type="button" data-person="operator"><span class="avatar">MR</span><b>Maria Reyes</b><span class="role-name">Case operator</span><small>Starts the case and moves it forward</small></button>
+      <button type="button" data-person="professional"><span class="avatar">JC</span><b>Atty. Jose Cruz</b><span class="role-name">Professional</span><small>Reviews the evidence and the exact tax</small></button>
+      <button type="button" data-person="owner"><span class="avatar">AS</span><b>Ana Santos</b><span class="role-name">Family representative</span><small>Approves filing and payment with a one-time code</small></button>
+    </div>
+    <ol class="how">
+      <li><b>1</b>Maria asks Habilin to start. It gets the official records and prepares the tax.</li>
+      <li><b>2</b>Atty. Cruz checks the evidence and approves the exact amount.</li>
+      <li><b>3</b>Ana approves. Habilin files, pays once and verifies the receipts.</li>
+    </ol>
+  </section>
   <div id="case-desk" hidden>
     <div class="desk">
       <div class="case-column">
@@ -41,7 +52,7 @@
             <p class="case-meta"><span id="crumb-case" class="mono">EST-001</span><span id="case-eyebrow">Philippine estate tax</span></p>
             <h1><span id="case-name">Estate of Alex Santos</span> <span class="synthetic-label">Synthetic</span></h1>
           </div>
-          <a class="secondary" id="download-packet" href="#">Export packet</a>
+          <a class="secondary" id="download-packet" href="#">Print summary</a>
         </div>
 
         <div id="locked-banner" class="alert" hidden>Owner safety lock is on. Nothing can change until it is lifted.</div>
@@ -198,6 +209,7 @@
   </div>
   <p id="error" class="error" role="alert" hidden></p>
 </main>
+<section id="print-view" aria-hidden="true"></section>
 <script src="/app.js"></script>
 </body>
 </html>

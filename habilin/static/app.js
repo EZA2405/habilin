@@ -15,6 +15,9 @@ const PLACES = {
 };
 const TONES = {completed: "good", filed: "good", closed: "good", ready_to_submit: "good", ownership_conflict: "warn", blocked_professional: "warn", filing_unknown: "warn",
                await_professional: "action", await_owner: "action", missing_record: "action", payment_pending: "action"};
+const PEOPLE = {operator: ["Maria Reyes", "Case operator", "MR", "Hi Maria. Tell me to start and I’ll get the official records and prepare the tax. I’ll stop whenever someone needs to decide."],
+  professional: ["Atty. Jose Cruz", "Professional", "JC", "Good day, Atty. Cruz. Your part: check the evidence and the exact amount, then approve. Nothing is filed without you."],
+  owner: ["Ana Santos", "Family representative", "AS", "Hi Ana. Nothing is filed or paid until you approve with your one-time code. You can also lock or close the case."]};
 let tokens = {};
 let role = null;
 let caseId = "EST-001";
@@ -60,7 +63,7 @@ function renderAction() {
     || (actions[current.stage] && current.role === "professional" ? "operator" : null);
   const handoff = needed && needed !== current.role && !current.locked;
   $("next-action").hidden = (review || asking) && !handoff;
-  $("next-action").textContent = handoff ? `Continue as ${needed[0].toUpperCase() + needed.slice(1)}` : action || "Check case status";
+  $("next-action").textContent = handoff ? `Hand off to ${PEOPLE[needed][0]}` : action || "Check case status";
   $("next-action").dataset.action = handoff ? `switch:${needed}` : action ? "progress" : "status";
   $("next-action").disabled = busy;
   const wait = {await_professional: "Next: a professional reviews the exact amount.", await_owner: "Next: the owner approves with a one-time code."};
@@ -90,7 +93,8 @@ async function refresh() {
   const data = await api("/api/state"); current = data.case; packetHash = data.packet_hash;
   const p = place(), packet = current.packet, m = current.metrics || {};
   document.body.dataset.role = current.role;
-  $("case-desk").hidden = false; $("role-switch").hidden = false;
+  $("portal").hidden = true; $("case-desk").hidden = false; $("role-switch").hidden = false;
+  $("who-avatar").textContent = PEOPLE[role][2]; $("who-name").textContent = `${PEOPLE[role][0]} · ${PEOPLE[role][1]}`;
   document.querySelectorAll("[data-role]").forEach((b) => { b.disabled = !tokens[b.dataset.role]; b.classList.toggle("active", b.dataset.role === role); b.setAttribute("aria-selected", b.dataset.role === role); });
   document.querySelectorAll("[data-case]").forEach((b) => b.classList.toggle("active", b.dataset.case === caseId));
   $("crumb-case").textContent = current.id; $("case-eyebrow").textContent = p.country;
@@ -172,6 +176,15 @@ async function tool(name, args, after) {
   try { await api("/api/tool", {name, args}); await refresh(); if (after) message(after, "agent"); }
   catch (e) { error(e.message); } finally { busy = false; if (current) renderAction(); }
 }
+function showPortal(next) {
+  $("case-desk").hidden = true; $("role-switch").hidden = true; $("portal").hidden = false; error("");
+  document.querySelectorAll("[data-person]").forEach((b) => b.classList.toggle("next", b.dataset.person === next));
+  window.scrollTo({top: 0});
+}
+async function signIn(person) {
+  $("conversation").replaceChildren(); message(PEOPLE[person][3], "agent");
+  await useRole(person); window.scrollTo({top: 0});
+}
 async function useRole(next) {
   if (!tokens[next]) return;
   role = next; remember(); error("");
@@ -189,7 +202,7 @@ document.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click
 $("next-action").addEventListener("click", () => {
   const action = $("next-action").dataset.action;
   if (busy || !current) return;
-  if (action.startsWith("switch:")) { useRole(action.slice(7)); window.scrollTo({top: 0}); return; }
+  if (action.startsWith("switch:")) { showPortal(action.slice(7)); return; }
   send(action === "progress" ? "Progress this estate case" : "Check case status");
 });
 $("answer-no").addEventListener("click", () => tool("answer_question", {answer: false}, "Thanks. That deduction does not apply, so I can prepare the packet."));
@@ -209,16 +222,28 @@ $("close-case").addEventListener("click", () => {
   delete $("close-case").dataset.armed; $("close-case").textContent = "Close case & delete personal data";
   tool("close_case", {confirmed: true});
 });
-$("download-packet").addEventListener("click", async (e) => {
+$("download-packet").addEventListener("click", (e) => {
   e.preventDefault();
-  try { const packet = await api("/api/packet"), url = URL.createObjectURL(new Blob([JSON.stringify(packet, null, 2)], {type: "application/json"})), a = document.createElement("a"); a.href = url; a.download = `Habilin-${caseId}-Simulated-Packet.json`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
-  catch (e) { error(e.message); }
+  // A plain one-page summary for people, printed or saved as PDF from the browser.
+  const v = (id) => $(id).textContent, el = (tag, text) => { const n = document.createElement(tag); if (text != null) n.textContent = text; return n; };
+  const table = (rows) => { const t = el("table"); rows.forEach(([k, val]) => { const tr = el("tr"); tr.append(el("td", k), el("td", val)); t.append(tr); }); return t; };
+  const steps = el("ol"); [...$("open-steps").children].forEach((li) => steps.append(el("li", li.textContent)));
+  $("print-view").replaceChildren(
+    el("h1", `${v("case-name")} · ${v("case-eyebrow")}`), el("p", `Case ${v("crumb-case")} · prepared ${new Date().toLocaleDateString()} · simulated institutions, synthetic case`),
+    el("h2", "Tax"), table([[v("value-label"), v("property-value")], ["Verified estate share", v("verified-share")], ["Estate’s share of value", v("gross")], [v("allowance-label"), v("allowance")], ["Taxable amount", v("net")], ["Rate", v("rate")], ["Tax due", v("tax-total")], ["Status", v("tax-label")]]),
+    el("h2", "Approvals and receipts"), table([["Professional approval", v("professional-status")], ["Owner authorization", v("owner-status")], ["Filing", v("filing-receipt")], ["Payment", v("payment-receipt")], ["Packet fingerprint", v("full-packet-hash")]]),
+    el("h2", "Next office"), table([["Office", v("office-name")], ["Official mailbox", v("office-mailbox")]]),
+    el("h2", "Still to do"), steps, el("p", v("tax-fine")));
+  window.print();
 });
 // Local demo: one screen plays all three people, so the page signs itself in. Owner approvals still need the one-time code.
 (async () => {
   try {
     const res = await fetch("/api/demo-session"), data = await res.json();
     if (!res.ok) throw new Error(data.error);
-    tokens = data.tokens; if (!ROLES.includes(role)) role = "operator"; await refresh();
+    tokens = data.tokens;
+    if (ROLES.includes(role)) await refresh(); else showPortal("operator");
   } catch (e) { error(`Could not open the demo case (${e.message || "server unavailable"}). Restart it with: python3 -m habilin serve`); }
 })();
+$("switch-user").addEventListener("click", () => showPortal());
+document.querySelectorAll("[data-person]").forEach((b) => b.addEventListener("click", () => signIn(b.dataset.person)));
