@@ -167,8 +167,8 @@ async function refresh() {
   renderAction();
 }
 
-async function send(text) {
-  if (busy) return; busy = true; $("send").disabled = true; $("next-action").disabled = true; error(""); message(text, "user"); $("message").value = "";
+async function send(text, echo = true) {
+  if (busy) return; busy = true; $("send").disabled = true; $("next-action").disabled = true; error(""); if (echo) message(text, "user"); $("message").value = "";
   try { const data = await api("/api/message", {text}); message(data.reply, "agent", [data.classification.source, data.phrased_by].filter(Boolean).join(" · ")); await refresh(); }
   catch (e) { error(e.message); message(e.message, "agent"); }
   finally { busy = false; $("send").disabled = false; if (current) renderAction(); }
@@ -220,7 +220,7 @@ $("next-action").addEventListener("click", () => {
   const action = $("next-action").dataset.action;
   if (busy || !current) return;
   if (action.startsWith("switch:")) { showPortal(action.slice(7)); return; }
-  send(action === "progress" ? "Progress this estate case" : "Check case status");
+  send(action === "progress" ? "Progress this estate case" : "Check case status", false);
 });
 $("answer-no").addEventListener("click", () => tool("answer_question", {answer: false}, "Thanks. That deduction does not apply, so I can prepare the packet."));
 $("answer-yes").addEventListener("click", () => tool("answer_question", {answer: true}, "Thanks. That changes the tax, so I stopped the case for a professional."));
