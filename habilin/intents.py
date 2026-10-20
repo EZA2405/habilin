@@ -78,7 +78,7 @@ def reply(intent, case):
     if case.get("question") and case["stage"] == "ready_to_prepare":
         return f"The ownership record is reconciled. One question before I compute the tax: {case['question']['text']} Please answer with the buttons on the case page."
     messages = {
-        "missing_record": "The ownership record is missing. I can request it from the simulated records desk.",
+        "missing_record": "The official ownership record is missing. I can request the title record from the simulated land registry.",
         "await_professional": "I obtained corrected evidence and prepared the tax packet. A professional must review it before the owner can authorize filing and payment.",
         "await_owner": "Professional review is recorded. The owner must confirm the exact packet and use a one-time code from their local terminal.",
         "ready_to_submit": "The reviewed packet is authorized. I can submit it once to the simulated filing service.",
