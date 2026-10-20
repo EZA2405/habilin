@@ -6,9 +6,11 @@ Habilin progresses an authorized estate-tax case to a verified sandbox filing an
 
 The demo form selects an authenticated role token and operates one existing synthetic case. It does not accept real personal records. Case EST-001 stipulates a resident, unmarried decedent, death on 10 April 2026, PHP15m investment property, no other deductions/credits/debts/penalties, an intake share of 100%, and a source-confirmed share of 50%. Five supporting fixture documents include authority, death evidence, valuation, settlement evidence and CPA statement. The local planner uses the corrected evidence only as a proposal awaiting professional approval.
 
-## Workspace views
+## Cases and interface
 
-The browser offers Guided and Professional views, plus a role-matched default: professional sessions receive the denser Professional workspace; operator and owner sessions receive Guided. Users can override the default, with the view preference saved locally in the browser. Guided emphasizes the next permitted action and collapses calculation/activity details. Professional expands those details and adds the full packet fingerprint, current-packet approval status and recorded filing/payment idempotency keys. Both use the same case, API and server permissions. Selecting Professional never grants professional authority. The next-action button routes to the appropriate approval form, progresses permitted sandbox steps or reads status when the session must wait.
+One engine runs two synthetic cases with local rules: EST-001 (Philippine estate tax: BIR, 6% above the PHP5M standard deduction, one calendar year to file) and EST-UK-001 (UK Inheritance Tax: HMRC, 40% above the GBP325,000 threshold, due by the end of the sixth month after death). Jurisdiction rules (tax formula, deadline, late cost, payee, limits, office routing, required document) live in `RULES` in `habilin/core.py`; adding a country means adding a rule set, not changing the agent. The browser selects the case with an `X-Case-Id` header; the server validates it.
+
+The interface puts every action in one "What happens next" card: the next-step button, the clarifying question (Yes/No), and the professional or owner approval form. Details sit in tabs (Tax, Evidence, Offices & next steps, Impact, Technical). A demo link signs in all three roles; "Acting as" tabs switch between them, and each request carries that role's own token.
 
 ## Goal and finish condition
 
@@ -31,6 +33,7 @@ Jev TypeSafe classifies text into `unsafe`, `progress`, `status`, `explain`, `co
 | check_filing | Operator or owner; both bound approvals | Reads simulated filing receipt before a payment can proceed |
 | pay_tax | Operator or owner; both bound approvals | Verifies official payee, amount limit and reserve; ledger debit once |
 | check_payment | Operator or owner; both bound approvals | Simulated ledger settles, then agent reads the settled result |
+| answer_question | Operator or owner; form buttons only | Answers the open clarifying question (PH family home; UK home passing to descendants). Yes stops the case for a professional; No records the assumption. Chat cannot answer it |
 | lock | Owner | Blocks further mutations; no chat unlock |
 | close_case | Owner; explicit confirmation | Only after verified filing and payment. Deletes personal records, documents and activity text; keeps receipts, approval fingerprints and idempotency keys. Allowed while locked. Irreversible |
 

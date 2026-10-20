@@ -6,7 +6,8 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from habilin.core import EstateAgent, Principal, Rejected, digest, estate_tax, late_penalty, nominal_due_date
+from habilin.core import (EstateAgent, Principal, Rejected, digest, estate_tax, late_penalty, nominal_due_date,
+                          uk_due_date, uk_inheritance_tax)
 
 
 class WorkflowTests(unittest.TestCase):
@@ -16,6 +17,7 @@ class WorkflowTests(unittest.TestCase):
         self.owner = Principal("demo-owner", "owner", "EST-001")
         self.operator = Principal("demo-operator", "operator", "EST-001")
         self.professional = Principal("demo-cpa", "professional", "EST-001")
+        self.agent.tool(self.operator, "answer_question", answer=False)
 
     def tearDown(self):
         self.temp.cleanup()
@@ -27,7 +29,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(result["record"]["share_bps"], 5000)
         self.assertEqual(result["record"]["version"], 2)
         self.assertEqual([e["tool"] for e in result["events"]],
-                         ["request_record", "resolve_record", "prepare_packet"])
+                         ["answer_question", "request_record", "resolve_record", "prepare_packet"])
 
     def approve(self):
         case = self.agent.advance(self.operator)
@@ -262,6 +264,57 @@ class WorkflowTests(unittest.TestCase):
             self.agent.advance(self.operator)
 
 
+class UKCaseTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.agent = EstateAgent(Path(self.temp.name) / "case.db")
+        self.operator = Principal("demo-operator", "operator", "EST-UK-001")
+        self.owner = Principal("demo-owner", "owner", "EST-UK-001")
+        self.professional = Principal("demo-cpa", "professional", "EST-UK-001")
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    def test_same_agent_completes_uk_case_with_hmrc_rules(self):
+        self.assertEqual(self.agent.advance(self.operator)["stage"], "ready_to_prepare")
+        self.agent.tool(self.operator, "answer_question", answer=False)
+        case = self.agent.advance(self.operator)
+        self.assertEqual(case["packet"]["tax_centavos"], 5_000_000)
+        self.assertEqual(case["packet"]["nominal_due_date"], "2027-02-28")
+        self.assertEqual(case["packet"]["payee"], "SIM-HMRC-INHERITANCE-TAX")
+        packet_hash = digest(case["packet"])
+        self.agent.tool(self.professional, "professional_approve", packet_hash=packet_hash, confirmed=True)
+        self.agent.tool(self.owner, "owner_approve", packet_hash=packet_hash, confirmed=True,
+                        code=self.agent.issue_code("EST-UK-001"))
+        for _ in range(3):
+            case = self.agent.advance(self.operator)
+        self.assertEqual(case["stage"], "completed")
+        self.assertEqual(case["payment_receipt"], "SIM-HMRC-PAY-0001")
+        self.assertEqual(case["balance_centavos"], 3_000_000)
+        self.assertIsNone(case["outbox"])
+        ph = self.agent.view(Principal("demo-operator", "operator", "EST-001"))
+        self.assertEqual(ph["stage"], "missing_record")
+
+    def test_residence_band_answer_stops_for_professional(self):
+        self.agent.tool(self.operator, "answer_question", answer=True)
+        case = self.agent.advance(self.operator)
+        self.assertEqual(case["stage"], "blocked_professional")
+        self.assertIsNone(case["packet"])
+
+    def test_uk_code_cannot_approve_ph_case(self):
+        self.agent.tool(self.operator, "answer_question", answer=False)
+        case = self.agent.advance(self.operator)
+        self.agent.tool(self.professional, "professional_approve", packet_hash=digest(case["packet"]), confirmed=True)
+        code = self.agent.issue_code("EST-UK-001")
+        ph_operator = Principal("demo-operator", "operator", "EST-001")
+        self.agent.tool(ph_operator, "answer_question", answer=False)
+        ph = self.agent.advance(ph_operator)
+        ph_hash = digest(ph["packet"])
+        self.agent.tool(Principal("demo-cpa", "professional", "EST-001"), "professional_approve", packet_hash=ph_hash, confirmed=True)
+        with self.assertRaises(Rejected):
+            self.agent.tool(Principal("demo-owner", "owner", "EST-001"), "owner_approve", packet_hash=ph_hash, confirmed=True, code=code)
+
+
 class MoneyTests(unittest.TestCase):
     def test_reference_amounts_and_zero_floor(self):
         self.assertEqual(estate_tax(1_500_000_000, 10000)["tax_centavos"], 60_000_000)
@@ -280,6 +333,20 @@ class MoneyTests(unittest.TestCase):
         self.assertEqual(result["surcharge_centavos"], 23_700)
         self.assertEqual(result["interest_centavos"], 86_270)
         self.assertEqual(late_penalty(15_000_000, 0)["total_centavos"], 0)
+
+    def test_uk_threshold_rate_and_six_month_deadline(self):
+        self.assertEqual(uk_inheritance_tax(90_000_000, 5000)["tax_centavos"], 5_000_000)
+        self.assertEqual(uk_inheritance_tax(32_500_000, 10000)["tax_centavos"], 0)
+        self.assertEqual(uk_due_date("2026-01-15"), "2026-07-31")  # gov.uk example: January death, due 31 July
+        self.assertEqual(uk_due_date("2026-08-14"), "2027-02-28")
+
+    def test_family_home_answer_stops_for_professional(self):
+        temp = tempfile.TemporaryDirectory()
+        agent = EstateAgent(Path(temp.name) / "case.db")
+        operator = Principal("demo-operator", "operator", "EST-001")
+        agent.tool(operator, "answer_question", answer=True)
+        self.assertEqual(agent.advance(operator)["stage"], "blocked_professional")
+        temp.cleanup()
 
     def test_calendar_anniversary_is_not_365_days(self):
         self.assertEqual(nominal_due_date("2023-03-01"), "2024-03-01")

@@ -1,6 +1,7 @@
 # Public repo: publish only the product, its tests and sourced research.
 /*
 !/.gitignore
+!/.env.example
 !/README.md
 !/VISION.md
 !/AGENT_SPEC.md

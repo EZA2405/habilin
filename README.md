@@ -51,47 +51,28 @@ Provide `TYPESAFE_API_KEY` to that terminal via your private environment/secret 
 
 ## 4 Installation and execution
 
-From this directory, run:
+Optional: copy `.env.example` to `.env.local` and add your `TYPESAFE_API_KEY`. `.env.local` is loaded at startup and never committed.
 
 ```sh
-python3 -m habilin serve --port 8787
+python3 -m habilin serve --port 8787              # offline fixture routing
+python3 -m habilin serve --port 8787 --live-jev   # live Jev/TypeSafe classification
 ```
 
-Open `http://127.0.0.1:8787`. This mode is clearly labelled **Offline fixture routing**. The suggestion buttons and `Asikasuhin mo ang estate case` are deterministic rehearsal inputs; arbitrary text asks for clarification.
+The server prints a **demo link** that signs in all three roles at once. The tokens travel in the URL fragment (never sent to the server as a URL) and are removed from the address bar on load; the page keeps them in this browser tab's session storage until **Sign out** or the tab closes (local demo only). Switch roles with the **Acting as** tabs; switch between the **Philippines** and **United Kingdom** cases in the left sidebar. Every request still carries that role's own token, and the server enforces role and approval checks.
 
-The **Workspace view** selector offers **Match my role**, **Guided** and **Professional**. Matching the role defaults professional sessions to a compact workspace with expanded calculations/activity and packet/approval/idempotency details; owner and operator sessions default to a guided next step with expandable details. An explicit preference is remembered in this browser, across demo role switches. Selecting a view never changes the authenticated role, available approvals or server permissions. Browser storage contains only the view preference; tokens remain in page memory. Both views retain the amount, evidence, official payee, approval requirements, receipts and unfinished legal steps.
+Walkthrough, for either case:
 
-The next-action button progresses permitted sandbox steps, directs the appropriate reviewer to the approval form, or checks status while waiting. The agent still pauses for separate professional and owner authorization.
+1. **Operator:** click the green button. The agent fetches the official title record, catches the 50% versus 100% ownership mismatch, then asks one question (PH: was it the family home? UK: does the home pass to children or grandchildren?). Answer **No** to continue; **Yes** stops the case for a professional because the tax would change.
+2. **Operator:** prepare the packet. PH: PHP150,000. UK: GBP50,000.
+3. **Professional:** confirm and record approval.
+4. **Owner:** get a one-time code in a separate terminal and approve:
+   ```sh
+   python3 -m habilin code --directory .runtime --case EST-001      # or EST-UK-001
+   ```
+5. **Operator:** click three times: lost filing reply, then confirmed filing and pending payment, then verified payment. The PH case drafts (never sends) an eCAR email to the estate's official BIR district-office mailbox. See the **Offices & next steps** and **Impact** tabs.
+6. **Owner:** optionally lock the case, then **Close case & delete personal data** (two clicks).
 
-For actual model classification, start with:
-
-```sh
-python3 -m habilin serve --port 8787 --live-jev
-```
-
-In another terminal, obtain local demo tokens:
-
-```sh
-python3 -m habilin sessions
-```
-
-Paste the operator token into the case desk. Click **Progress case**: the agent obtains a conflicting record, requests issuer clarification and prepares the corrected packet. Switch to the professional token, scroll to the review form, confirm the packet and record approval. Switch to the owner token. Obtain the separate owner code in the local terminal:
-
-```sh
-python3 -m habilin code
-```
-
-Confirm the exact filing/payment authorization and enter the code in the approval form. Never enter it in chat. Switch back to the operator. Click **Progress case** three times: first yields uncertain filing; second reconciles acceptance and creates a pending payment; third confirms settlement. **Check status** reads state without progressing it.
-
-To preserve a case while starting a fresh demo, select a new directory. It holds its own credentials and database:
-
-```sh
-python3 -m habilin serve --directory .runtime/rehearsal-2 --port 8788
-python3 -m habilin sessions --directory .runtime/rehearsal-2
-python3 -m habilin code --directory .runtime/rehearsal-2
-```
-
-The safety lock is deliberately one way in this prototype. Start a new directory to rehearse an unlocked case; no existing case is silently deleted or unlocked. Generated session tokens and codes are local secrets; `.runtime/` is ignored and excluded from the source ZIP.
+Use a new `--directory` for a fresh demo; each holds its own tokens and database. `python3 -m habilin sessions --directory <dir>` prints the tokens again.
 
 ## 5 Testing
 
@@ -99,9 +80,9 @@ The safety lock is deliberately one way in this prototype. Start a new directory
 python3 -m unittest discover -s tests -v
 ```
 
-33 tests cover evidence correction, a complete case, unknown filing recovery after restart, concurrent/replayed operations, direct bypass attempts across all four judged attack categories, pending/failed status, reserve checks, code expiry/exhaustion/consumption, stale approvals, dispute escalation, CPA evidence, money validation, calendar anniversaries and dialogue fallback. These are our scripted tests, not organizer-issued benchmarks or a broad security certification.
+The suite covers both the Philippine and UK cases, the family-home and residence-band questions, office routing from the verified BIR directory, penalty math checked against BIR's RMC 33-2026 example, data deletion at closure (checked on the raw database file), evidence correction, a complete case, unknown filing recovery after restart, concurrent/replayed operations, direct bypass attempts across all four judged attack categories, pending/failed status, reserve checks, code expiry/exhaustion/consumption, stale approvals, dispute escalation, CPA evidence, money validation, calendar anniversaries and dialogue fallback. These are our scripted tests, not organizer-issued benchmarks or a broad security certification.
 
-An additional optional browser check, `python3 scripts/check_workspace.py`, uses Node.js, an externally installed Playwright package (resolvable through `NODE_PATH` if needed) and installed Google Chrome. It creates an isolated temporary case and checks role defaults, view persistence, both approval views, a full filing/payment, the safety lock and desktop/mobile layouts. Screenshots go to `.build/interface-review/`. These browser tools are not application or standard test-suite dependencies.
+An additional optional browser check, `python3 scripts/check_workspace.py`, uses Node.js, an externally installed Playwright package (resolvable through `NODE_PATH` if needed) and installed Google Chrome. It creates an isolated temporary case directory and drives the demo link, role tabs, question buttons, both countries end to end, office routing, impact, lock, closure and desktop/mobile layouts. Screenshots go to `.build/interface-review/`. These browser tools are not application or standard test-suite dependencies.
 
 Replay a synthetic execution and capture fresh evidence:
 
@@ -113,7 +94,7 @@ python3 scripts/replay_demo.py --output .build/replay.json
 
 ## 6 Repository and deployment
 
-Git repository: not published; the workspace originally had no Git metadata. Live deployment: none. Launch as above on loopback for the local demo. The standard-library server, shared-machine demo credentials and SQLite simulator are not a public production deployment. Do not bind this server to the public internet. Production requires individual identity/owner-code delivery, institution adapters, jurisdiction/legal review, operational recovery and deployment hardening.
+Git repository: https://github.com/EZA2405/habilin (public). Live deployment: none. Launch as above on loopback for the local demo. The standard-library server, shared-machine demo credentials and SQLite simulator are not a public production deployment. Do not bind this server to the public internet. Production requires individual identity/owner-code delivery, institution adapters, jurisdiction/legal review, operational recovery and deployment hardening.
 
 Start with [submission/START_HERE.md](submission/START_HERE.md) for the deck, documents, video and remaining submission work. [SUBMISSION_REQUIREMENTS.md](SUBMISSION_REQUIREMENTS.md) distinguishes official requirements from our supporting materials. [AGENT_SPEC.md](AGENT_SPEC.md) describes the implemented agent and its boundaries.
 

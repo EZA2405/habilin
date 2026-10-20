@@ -6,7 +6,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from .core import CASE_ID, EstateAgent, Principal, Rejected, digest
+from .core import CASE_ID, SEEDS, EstateAgent, Principal, Rejected, digest
 from .intents import classify, reply
 
 STATIC = Path(__file__).with_name("static")
@@ -26,7 +26,7 @@ def make_server(directory, port=8765, live=False):
         tokens = {role: secrets.token_urlsafe(32) for role in identities}
         access_path.write_text(json.dumps(tokens, indent=2))
     access_path.chmod(0o600)
-    principals = {token: Principal(identities[role], role, CASE_ID) for role, token in tokens.items()}
+    principals = {token: (identities[role], role) for role, token in tokens.items()}
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *args):
@@ -56,9 +56,12 @@ def make_server(directory, port=8765, live=False):
             token = self.headers.get("Authorization", "").removeprefix("Bearer ")
             if not token.isascii():
                 raise Rejected("A valid ASCII demo session token is required.")
-            for known, principal in principals.items():
+            case_id = self.headers.get("X-Case-Id", CASE_ID)
+            if case_id not in SEEDS:
+                raise Rejected("Unknown case.")
+            for known, (subject, role) in principals.items():
                 if secrets.compare_digest(token, known):
-                    return principal
+                    return Principal(subject, role, case_id)
             raise Rejected("A valid demo session token is required.")
 
         def do_GET(self):

@@ -48,6 +48,7 @@ class ServerTests(unittest.TestCase):
     def test_http_tool_bypass_is_rejected(self):
         operator=Principal("demo-operator","operator","EST-001")
         professional=Principal("demo-cpa","professional","EST-001")
+        self.server.agent.tool(operator,"answer_question",answer=False)
         case=self.server.agent.advance(operator)
         packet_hash=digest(case["packet"])
         self.server.agent.tool(professional,"professional_approve",packet_hash=packet_hash,confirmed=True)
@@ -76,7 +77,16 @@ class ServerTests(unittest.TestCase):
         status,raw=self.request("/api/message",{"text":"Asikasuhin mo ang estate case"})
         self.assertEqual(status,200)
         self.assertEqual(json.loads(raw)["classification"]["source"],"offline_fixture")
+        self.assertIn("family home",json.loads(raw)["reply"])
+        self.assertEqual(json.loads(self.request("/api/state")[1])["case"]["stage"],"ready_to_prepare")
+        self.assertEqual(self.request("/api/tool",{"name":"answer_question","args":{"answer":False}})[0],200)
+        self.request("/api/message",{"text":"Progress this estate case"})
         self.assertEqual(json.loads(self.request("/api/state")[1])["case"]["stage"],"await_professional")
+
+    def test_case_header_selects_uk_case_and_rejects_unknown(self):
+        case=json.loads(self.request("/api/state",**{"X-Case-Id":"EST-UK-001"})[1])["case"]
+        self.assertEqual(case["jurisdiction"],"UK")
+        self.assertEqual(self.request("/api/state",**{"X-Case-Id":"EST-999"})[0],403)
 
     def test_clarification_correction_and_off_topic_do_not_mutate_case(self):
         before=json.loads(self.request("/api/state")[1])["case"]["stage"]

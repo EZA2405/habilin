@@ -22,105 +22,84 @@ const {chromium} = require('playwright');
     const page = await browser.newPage({viewport: {width: 1600, height: 1100}, reducedMotion: 'reduce'});
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.goto(url);
-    async function signIn(role) {
-      if (await page.locator('#logout').isVisible()) await page.locator('#logout').click();
-      await page.locator('#token').fill(tokens[role]);
-      await page.locator('#login-form button').click();
-      await page.waitForFunction(role => document.body.dataset.role === role, role);
-    }
-    async function view(expected) {
-      assert.equal(await page.locator('body').getAttribute('data-view'), expected);
-    }
+    const link = url + '/#' + Object.entries(tokens).map(([r, t]) => `${r}=${t}`).join('&');
     async function stage(expected) {
       await page.waitForFunction(expected => document.querySelector('#execution-stage').textContent === expected, expected);
       await page.waitForFunction(() => !document.querySelector('#next-action').disabled);
     }
-    async function fits() {
-      assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'Horizontal overflow');
+    async function as(role) {
+      await page.locator(`[data-role=${role}]`).click();
+      await page.waitForFunction(role => document.body.dataset.role === role, role);
     }
-    async function mobileScreenshot(role, preference, filename) {
-      const mobile = await browser.newPage({viewport: {width: 390, height: 844}, reducedMotion: 'reduce'});
-      mobile.on('pageerror', error => errors.push(error.message));
-      await mobile.goto(url);
-      await mobile.locator('#token').fill(tokens[role]);
-      await mobile.locator('#login-form button').click();
-      await mobile.waitForFunction(role => document.body.dataset.role === role, role);
-      await mobile.locator('#workspace-view').selectOption(preference);
-      assert(await mobile.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'Mobile horizontal overflow');
-      await mobile.screenshot({path: screenshots + '/' + filename, fullPage: true});
-      await mobile.close();
+    async function code(caseId) { console.log('OWNER_CODE_REQUIRED ' + caseId); return (await input.next()).value; }
+    async function fits(p) { assert(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'Horizontal overflow'); }
+    async function approveAll(caseId) {
+      await page.locator('#next-action').click();
+      await stage('ready_to_prepare');
+      assert(await page.locator('#question').isVisible(), 'Question buttons should be visible');
+      await page.locator('#answer-no').click();
+      await page.waitForFunction(() => document.querySelector('#question').hidden);
+      await page.locator('#next-action').click();
+      await stage('await_professional');
+      await as('professional');
+      assert(await page.locator('#approval').isVisible());
+      await page.locator('#confirm').check();
+      await page.locator('#approve-button').click();
+      await stage('await_owner');
+      await as('owner');
+      assert(await page.locator('#owner-code').isVisible());
+      await page.locator('#confirm').check();
+      await page.locator('#owner-code').fill(await code(caseId));
+      await page.locator('#approve-button').click();
+      await stage('ready_to_submit');
+      await as('operator');
+      for (const next of ['filing_unknown', 'payment_pending', 'completed']) {
+        await page.locator('#next-action').click();
+        await stage(next);
+      }
     }
-    await signIn('operator');
-    await view('guided');
-    assert.equal(await page.locator('#calculation-details').getAttribute('open'), null);
-    await page.locator('#calculation-details summary').click();
-    assert(await page.locator('#gross').isVisible());
-    await page.locator('#workspace-view').selectOption('professional');
-    await view('professional');
-    assert(await page.locator('#execution').isVisible());
+    await page.goto(link);
+    await page.waitForFunction(() => document.body.dataset.role === 'operator');
+    assert.equal(new URL(page.url()).hash, '', 'Tokens must be removed from the address bar');
     await stage('missing_record');
-    await page.reload();
-    await signIn('operator');
-    await view('professional');
-    assert.equal(await page.locator('#execution-stage').textContent(), 'missing_record');
-    await page.locator('#workspace-view').selectOption('auto');
-    await view('guided');
-    await page.locator('#next-action').click();
-    await stage('await_professional');
-    assert.equal(await page.locator('#approval').isVisible(), false);
-    await fits();
-    await page.screenshot({path: screenshots + '/guided-desktop.png', fullPage: true});
-    await mobileScreenshot('operator', 'guided', 'guided-mobile.png');
-    await signIn('professional');
-    await view('professional');
-    assert(await page.locator('#activity-details').getAttribute('open') !== null);
-    assert(await page.locator('#approval').isVisible());
-    await page.locator('#next-action').click();
-    assert(await page.locator('#confirm').evaluate(el => el === document.activeElement));
-    await fits();
-    await page.screenshot({path: screenshots + '/professional-desktop.png', fullPage: true});
-    await page.locator('#workspace-view').selectOption('guided');
-    assert(await page.locator('#approval').isVisible());
-    await page.locator('#confirm').check();
-    await page.locator('#approve-button').click();
-    await stage('await_owner');
-    await page.locator('#workspace-view').selectOption('auto');
-    await signIn('owner');
-    await view('guided');
-    await page.locator('#workspace-view').selectOption('professional');
-    assert(await page.locator('#owner-code').isVisible());
-    await page.locator('#confirm').check();
-    console.log('OWNER_CODE_REQUIRED');
-    const code = (await input.next()).value;
-    await page.locator('#owner-code').fill(code);
-    await page.locator('#approve-button').click();
-    await stage('ready_to_submit');
-    await page.locator('#next-action').click();
-    await stage('filing_unknown');
-    assert((await page.locator('#filing-key').textContent()).startsWith('filing-'));
-    await page.locator('#next-action').click();
-    await stage('payment_pending');
-    await page.locator('#next-action').click();
-    await stage('completed');
+    await fits(page);
+    await page.screenshot({path: screenshots + '/start-desktop.png', fullPage: true});
+    await approveAll('EST-001');
     assert.equal(await page.locator('#payment-receipt').textContent(), 'SIM-PAY-0001');
+    assert.equal(await page.locator('#tax-total').textContent(), '₱150,000');
     assert.equal(await page.locator('#office-mailbox').textContent(), 'rdo39_collection@bir.gov.ph');
     assert.equal(await page.locator('#outbox-status').textContent(), 'Draft ready · not sent');
     assert.equal(await page.locator('#m-penalty').textContent(), '₱55,500 avoided');
-    await page.screenshot({path: screenshots + "/completed-routing-impact.png", fullPage: true});
-    await mobileScreenshot('owner', 'professional', 'professional-mobile.png');
+    await page.locator('[data-tab=office]').click();
+    await page.screenshot({path: screenshots + '/completed-offices.png', fullPage: true});
+    await page.locator('[data-tab=impact]').click();
+    await page.screenshot({path: screenshots + '/completed-impact.png', fullPage: true});
+    await as('owner');
     await page.locator('#lock').click();
-    await page.locator('#locked-banner').waitFor({state: 'visible'});
-    assert.equal(await page.locator('#next-action').getAttribute('data-action'), 'status');
+    await page.locator('#lock').waitFor({state: 'hidden'});
     await page.locator('#close-case').click();
     await page.locator('#close-case').click();
     await stage('closed');
     assert.equal(await page.locator('#case-name').textContent(), 'Closed case EST-001');
-    assert.equal(await page.locator('#record-description').textContent(), 'Deleted at case closure');
     assert.equal(await page.locator('#m-deleted').textContent(), 'Yes');
     assert.equal(await page.locator('#m-mismatch').textContent(), '1');
+    await as('operator');
+    await page.locator('[data-case="EST-UK-001"]').click();
+    await stage('missing_record');
+    await approveAll('EST-UK-001');
+    assert.equal(await page.locator('#tax-total').textContent(), '£50,000');
+    assert.equal(await page.locator('#payment-receipt').textContent(), 'SIM-HMRC-PAY-0001');
+    await page.locator('[data-tab=tax]').click();
+    await page.screenshot({path: screenshots + '/uk-completed.png', fullPage: true});
+    const mobile = await browser.newPage({viewport: {width: 390, height: 844}, reducedMotion: 'reduce'});
+    mobile.on('pageerror', error => errors.push(error.message));
+    await mobile.goto(link);
+    await mobile.waitForFunction(() => document.body.dataset.role === 'operator');
+    await fits(mobile);
+    await mobile.screenshot({path: screenshots + '/mobile.png', fullPage: true});
+    await mobile.close();
     assert.deepEqual(errors, []);
-    console.log('PASS: role defaults, preference persistence, guided details, unchanged approvals, complete filing/payment, lock, case closure, desktop/mobile layouts; no browser errors.');
+    console.log('PASS: demo link sign-in, role tabs, family-home question, PH and UK cases end to end, office routing, impact, lock, closure, desktop/mobile layouts; no browser errors.');
   } finally { await browser.close(); process.stdin.destroy(); }
 })().catch(error => {console.error(error); process.exitCode = 1;});
 """
@@ -144,8 +123,8 @@ def main():
                                                 "screenshots": str(screenshots)}) + "\n")
                 process.stdin.flush()
                 for line in process.stdout:
-                    if line.strip() == "OWNER_CODE_REQUIRED":
-                        process.stdin.write(server.agent.issue_code() + "\n")
+                    if line.startswith("OWNER_CODE_REQUIRED"):
+                        process.stdin.write(server.agent.issue_code(line.split()[1]) + "\n")
                         process.stdin.flush()
                     else:
                         print(line, end="")

@@ -69,16 +69,23 @@ def reply(intent, case):
     if intent == "explain":
         if not case["packet"]:
             return "A tax packet is not prepared yet. I need supported ownership evidence before explaining a case amount; disputed ownership requires professional review."
-        return "For this restricted synthetic case: PHP15,000,000 property × 50% verified share = PHP7,500,000 gross. Less PHP5,000,000 standard deduction gives PHP2,500,000 net; 6% is PHP150,000. A professional must review the evidence and applicability."
+        p = case["packet"]
+        m = lambda v: f"{p['currency']} {v // 100:,}"
+        return (f"For this restricted synthetic case: {m(p['property_value_centavos'])} property × {p['share_bps'] // 100}% verified share = "
+                f"{m(p['gross_centavos'])} gross. Less {m(p['allowance_centavos'])} ({p['allowance_label'].lower()}) gives "
+                f"{m(p['net_centavos'])} net; at {p['rate_label']} the tax is {m(p['tax_centavos'])}. "
+                "A professional must review the evidence and applicability.")
+    if case.get("question") and case["stage"] == "ready_to_prepare":
+        return f"The ownership record is reconciled. One question before I compute the tax: {case['question']['text']} Please answer with the buttons on the case page."
     messages = {
         "missing_record": "The ownership record is missing. I can request it from the simulated records desk.",
-        "await_professional": "I obtained corrected evidence and prepared the PHP150,000 packet. A professional must review it before the owner can authorize filing and payment.",
+        "await_professional": "I obtained corrected evidence and prepared the tax packet. A professional must review it before the owner can authorize filing and payment.",
         "await_owner": "Professional review is recorded. The owner must confirm the exact packet and use a one-time code from their local terminal.",
         "ready_to_submit": "The reviewed packet is authorized. I can submit it once to the simulated filing service.",
         "filing_unknown": "The filing response timed out. I have not assumed failure or retried. Next I will check the existing submission key.",
         "payment_pending": "The filing receipt is confirmed. The sandbox payment is pending; I will verify its ledger status before calling it settled.",
-        "completed": "Simulated filing and tax payment are verified. eCAR and actual title transfer remain open; the estate is not fully settled.",
+        "completed": "Simulated filing and tax payment are verified. The remaining legal steps are listed under Offices & next steps; the estate is not fully settled.",
         "closed": "This case is closed. Personal records were deleted; only filing and payment receipts and approval fingerprints remain.",
-        "blocked_professional": "The issuer reports disputed ownership. I stopped the workflow for legal review.",
+        "blocked_professional": case.get("block_reason") or "The issuer reports disputed ownership. I stopped the workflow for legal review.",
     }
     return messages.get(case["stage"], "The case remains open. I can check the next authorized step.")

@@ -1,159 +1,226 @@
-let token = "";
+const ROLES = ["operator", "professional", "owner"];
+const PLACES = {
+  PH: {country: "PHILIPPINE ESTATE TAX", currency: "PHP", locale: "en-PH", issuer: "Registry of Deeds", record: "title copy", authority: "BIR",
+       valueLabel: "Property value at death (higher of BIR zonal or assessor value)",
+       taxFine: "Restricted illustration: resident, unmarried, property is not the family home, co-owner alive, no other deductions or credits. Rule: NIRC sections 84 and 86 as amended by RA 10963; RR 12-2018. *A professional confirms the deadline and any relief.",
+       penaltyLabel: "Penalty if filed one year late (25% + 12%/yr)",
+       impactFine: "Penalty rule: NIRC sections 248 and 249, checked against BIR RMC 33-2026's worked example. Compromise penalties are excluded.",
+       officeFine: "Mailboxes come from BIR's official contact directory (124 district offices, checked 20 Oct 2026). Drafts are never sent by the demo; a person reviews and sends them, and original documents are presented at the office."},
+  UK: {country: "UK INHERITANCE TAX", currency: "GBP", locale: "en-GB", issuer: "HM Land Registry", record: "title register", authority: "HMRC",
+       valueLabel: "Property value at death",
+       taxFine: "Restricted illustration: England, unmarried, no lifetime gifts or reliefs, home not passing to children or grandchildren. Rule: gov.uk Inheritance Tax, 40% above the £325,000 threshold, paid by the end of the sixth month after death.",
+       penaltyLabel: "Interest if paid one year late (7.75%/yr)",
+       impactFine: "HMRC late payment interest: 7.75% from 9 January 2026 (gov.uk interest rates page).",
+       officeFine: "Next step per gov.uk: HMRC sends a code after payment, then the executor applies for probate. No mailbox is used for this step."},
+};
+let tokens = {};
+let role = null;
+let caseId = "EST-001";
 let current;
 let packetHash;
 let busy = false;
 const $ = (id) => document.getElementById(id);
-const money = (value) => value == null ? "—" : new Intl.NumberFormat("en-PH", {style:"currency",currency:"PHP",maximumFractionDigits:0}).format(value/100);
-const stages = {
-  missing_record:["Obtain the missing ownership record","I’ll request a certified title copy from the simulated Registry of Deeds, compare it with the intake and resolve discrepancies.","Evidence needed",0],
-  await_professional:["Ready for professional review","The certified title shows 50% co-ownership with a living sibling. A professional must confirm the assumptions, evidence and exact packet.","Review required",1],
-  await_owner:["The owner has the next decision","The professional has reviewed the packet. The owner must authorize this filing and the exact tax payment with a one-time code.","Owner approval",2],
-  ready_to_submit:["Authorized and ready to submit","Both approvals bind this packet and the official tax payee. The agent can now execute the authorized step.","Authorized",3],
-  filing_unknown:["Check the filing before retrying","The simulated service timed out after receiving the packet. The agent will check its existing submission key to avoid a duplicate.","Outcome unknown",3],
-  payment_pending:["Verify the payment in the ledger","The filing receipt is confirmed. PHP150,000 was debited once; settlement is still pending.","Payment pending",4],
-  completed:["Filing and payment verified","The simulated service confirms the filing and the ledger confirms settlement. Government review, eCAR and title transfer remain open.","Milestone complete",5],
-  closed:["Case closed · personal data deleted","Records, documents and messages were deleted. Only receipts and approval fingerprints remain as proof of what was filed and paid.","Closed",5],
-  blocked_professional:["A legal issue needs a person","The issuer reports disputed ownership. The workflow is stopped for professional handling.","Stopped for review",0],
-};
-let viewPreference = "auto";
-try { viewPreference = localStorage.getItem("habilin.workspace-view") || "auto"; } catch {}
-if (!["auto", "guided", "professional"].includes(viewPreference)) viewPreference = "auto";
-function applyView() {
-  const professional = viewPreference === "professional" || (viewPreference === "auto" && current?.role === "professional");
-  document.body.dataset.view = professional ? "professional" : "guided";
-  $("workspace-view").value = viewPreference;
-  $("view-name").textContent = professional ? "PROFESSIONAL WORKSPACE" : "GUIDED WORKSPACE";
-  $("view-description").textContent = professional
-    ? "Evidence, calculations, authorization and execution state in one workspace."
-    : "One clear next step, with the details available whenever you need them.";
-  $("calculation-details").open = professional;
-  $("activity-details").open = professional;
+const place = () => PLACES[current?.jurisdiction || (caseId === "EST-UK-001" ? "UK" : "PH")];
+const money = (value) => value == null ? "—" : new Intl.NumberFormat(place().locale, {style: "currency", currency: place().currency, maximumFractionDigits: 0}).format(value / 100);
+
+try { tokens = JSON.parse(sessionStorage.getItem("habilin.tokens") || "{}"); caseId = sessionStorage.getItem("habilin.case") || caseId; } catch {}
+const fragment = new URLSearchParams(location.hash.slice(1));
+if (ROLES.some((r) => fragment.get(r))) {
+  ROLES.forEach((r) => { if (fragment.get(r)) tokens[r] = fragment.get(r); });
+  history.replaceState(null, "", location.pathname);
 }
-$("workspace-view").addEventListener("change", () => {
-  viewPreference = $("workspace-view").value;
-  try { localStorage.setItem("habilin.workspace-view", viewPreference); } catch {}
-  applyView();
-});
-applyView();
+function remember() { try { sessionStorage.setItem("habilin.tokens", JSON.stringify(tokens)); sessionStorage.setItem("habilin.case", caseId); } catch {} }
+
+function stageText() {
+  const p = place(), c = current, tax = money(c.packet?.tax_centavos);
+  const table = {
+    missing_record: ["Get the ownership record", `I’ll request the official ${p.record} from the simulated ${p.issuer}, compare it with what the family reported and resolve any difference.`, "Evidence needed", 0],
+    ownership_conflict: ["Resolve the ownership difference", `The ${p.record} disagrees with the intake. I’ll confirm it with the issuer before anything is calculated.`, "Evidence conflict", 0],
+    ready_to_prepare: c.question ? ["One question before the tax", c.question.text, "Your answer needed", 0]
+      : ["Ready to prepare the tax packet", "The evidence is reconciled. I can now compute the exact amount.", "Ready", 0],
+    await_professional: ["Professional review needed", `The official ${p.record} shows a 50% share, not the 100% the family reported. A professional confirms the evidence, assumptions and the exact ${tax}.`, "Review required", 1],
+    await_owner: ["The owner decides", `The professional approved. The owner authorizes this filing and the exact ${tax} payment with a one-time code.`, "Owner approval", 2],
+    ready_to_submit: ["Approved and ready to file", `Both approvals are bound to this exact packet and the official ${p.authority} payee.`, "Authorized", 3],
+    filing_unknown: ["Check the filing before retrying", "The simulated service received the filing but its reply was lost. I’ll check the existing filing instead of sending it twice.", "Outcome unknown", 3],
+    filed: ["Filing confirmed", "The filing receipt is verified. Next is the one authorized payment.", "Filed", 4],
+    payment_pending: ["Verify the payment", `${tax} was debited once. I’ll confirm settlement in the ledger before calling it paid.`, "Payment pending", 4],
+    completed: ["Filing and payment verified", "Receipts confirm both. The remaining legal steps are listed under Offices & next steps.", "Milestone complete", 5],
+    blocked_professional: ["A person needs to handle this", c.block_reason || "The issuer reports disputed ownership. The workflow is stopped for professional handling.", "Stopped for review", 0],
+    closed: ["Case closed · personal data deleted", "Names, records, documents and messages were deleted. Only receipts and approval fingerprints remain as proof.", "Closed", 5],
+  };
+  return table[c.stage] || ["Case remains open", "Check the recorded activity.", "In progress", 0];
+}
+
 function renderAction() {
   const review = !$("approval").hidden;
+  const asking = !$("question").hidden;
   const canProgress = ["operator", "owner"].includes(current.role) && !current.locked;
-  const actions = {
-    missing_record: "Obtain evidence & prepare packet ↗",
-    ready_to_submit: "Submit approved packet ↗",
-    filing_unknown: "Reconcile filing & progress payment ↗",
-    payment_pending: "Verify payment settlement ↗",
-  };
-  $("next-action").textContent = review ? "Review & approve this packet ↓" : canProgress && actions[current.stage] || "Check recorded case status ↗";
-  $("next-action").dataset.action = review ? "review" : canProgress && actions[current.stage] ? "progress" : "status";
+  const actions = {missing_record: "Get evidence & prepare packet ↗", ownership_conflict: "Resolve & prepare packet ↗", ready_to_prepare: "Prepare tax packet ↗",
+                   ready_to_submit: "File the approved packet ↗", filing_unknown: "Check filing & pay ↗", filed: "Make the payment ↗", payment_pending: "Verify payment ↗"};
+  const action = canProgress && !asking && actions[current.stage];
+  $("next-action").hidden = review || asking;
+  $("next-action").textContent = action || "Check case status ↗";
+  $("next-action").dataset.action = action ? "progress" : "status";
   $("next-action").disabled = busy;
-  $("action-help").textContent = review ? "Review the source evidence and exact amount before confirming below."
-    : current.locked ? "The owner safety lock blocks changes. You can still check recorded status."
-    : current.stage === "await_professional" ? "Waiting for a separate professional session to review the packet."
-    : current.stage === "await_owner" ? "Waiting for the owner's approval and separate one-time code."
-    : current.stage === "blocked_professional" ? "Disputed ownership requires professional handling outside this demo."
-    : !canProgress ? "Your professional session can review packets. An operator or owner progresses execution."
-    : current.stage === "completed" ? "The sandbox milestone is complete. Government review, eCAR and title transfer remain open."
-    : "This runs the next permitted sandbox steps and pauses at the next approval or uncertain result.";
+  const wait = {await_professional: "Switch to the Professional tab to review.", await_owner: "Switch to the Owner tab to approve."};
+  $("action-help").textContent = review ? "Review the evidence and exact amount, then confirm."
+    : asking ? "Answer with the buttons. A yes stops the case for a professional; chat cannot answer this."
+    : current.locked && current.stage !== "closed" ? "The owner safety lock blocks changes. You can still check status."
+    : wait[current.stage] || (!canProgress && current.stage !== "closed" ? "Professionals review packets; the operator or owner moves the case forward." : "");
 }
+
 async function api(path, body) {
-  const res = await fetch(path,{method:body?"POST":"GET",headers:{"Authorization":`Bearer ${token}`,"Content-Type":"application/json"},body:body?JSON.stringify(body):undefined});
+  const res = await fetch(path, {method: body ? "POST" : "GET", headers: {"Authorization": `Bearer ${tokens[role]}`, "X-Case-Id": caseId, "Content-Type": "application/json"}, body: body ? JSON.stringify(body) : undefined});
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Operation failed.");
   return data;
 }
-function error(message) { $("error").textContent=message; $("error").hidden=!message; }
+function error(text) { $("error").textContent = text; $("error").hidden = !text; }
 function message(text, who, source) {
-  const div=document.createElement("div"); div.className=`message ${who}`; div.textContent=text;
-  if(source){const small=document.createElement("small");small.textContent=source;div.append(small);}
-  $("conversation").append(div); $("conversation").scrollTop=$("conversation").scrollHeight;
+  const div = document.createElement("div"); div.className = `message ${who}`; div.textContent = text;
+  if (source) { const small = document.createElement("small"); small.textContent = source; div.append(small); }
+  $("conversation").append(div); $("conversation").scrollTop = $("conversation").scrollHeight;
 }
+function showTab(name) {
+  document.querySelectorAll("[data-tab]").forEach((b) => b.classList.toggle("active", b.dataset.tab === name));
+  document.querySelectorAll("[data-panel]").forEach((panel) => { panel.hidden = panel.dataset.panel !== name; });
+}
+
 async function refresh() {
-  const data=await api("/api/state");current=data.case;packetHash=data.packet_hash;
-  $("login").hidden=true;$("case-desk").hidden=false;$("logout").hidden=false;
-  $("session-label").textContent=`${current.role[0].toUpperCase()+current.role.slice(1)} session`;
-  $("model-mode").textContent=data.mode;
-  const [title,description,chip,step]=stages[current.stage] || ["Case remains open","Check the recorded activity.","In progress",0];
-  $("stage-title").textContent=title;$("stage-description").textContent=description;$("stage-chip").textContent=chip;
-  document.querySelectorAll("[data-step]").forEach((el,i)=>{el.className=i<step?"done":i===step?"current":"";el.querySelector("i").textContent=i<step?"✓":"—";});
-  $("locked-banner").hidden=!current.locked;
-  const packet=current.packet;
-  $("tax-total").textContent=money(packet?.tax_centavos);$("gross").textContent=money(packet?.gross_centavos);$("net").textContent=money(packet?.net_centavos);
-  $("verified-share").textContent=packet?`${packet.share_bps/100}%`:"—";
-  $("tax-label").textContent=current.professional_hash?"Professionally reviewed":packet?"Prepared · review needed":"Awaiting evidence";
-  $("case-name").textContent=current.label;
-  $("record-description").textContent=current.stage==="closed"?"Deleted at case closure":current.record?`Issuer version ${current.record.version} · ${current.record.share_bps/100}% share · intake reported 100%`:"Missing · intake reports 100% ownership";
-  $("record-status").textContent=current.record?.version===2?"Corrected":current.record?"Conflict":"Needed";
-  $("record-status").className=current.record?.version===2?"good-chip":"neutral-chip";
-  $("filing-receipt").textContent=current.filing_receipt||"Not yet verified";
-  $("payment-receipt").textContent=current.payment_receipt|| (current.payment_key?"Pending · not settled":"Not yet settled");
-  $("balance").textContent=money(current.balance_centavos);
-  const office=current.packet?.ecar_office, outbox=current.outbox, m=current.metrics||{};
-  $("office-name").textContent=office?`RDO ${office.rdo} · ${office.name}`:current.stage==="closed"?"Deleted at case closure":"Set when the packet is prepared";
-  $("office-mailbox").textContent=office?.mailbox||"—";
-  $("outbox-status").textContent=outbox?"Draft ready · not sent":"Prepared after payment is verified";
-  $("outbox-details").hidden=!outbox;$("outbox-subject").textContent=outbox?.subject||"";$("outbox-body").textContent=outbox?.body||"";
-  $("m-mismatch").textContent=m.mismatches_caught_before_filing??0;$("m-docs").textContent=m.documents_obtained_by_agent??0;
-  $("m-dupes").textContent=m.duplicate_actions_prevented??0;
-  $("m-days").textContent=m.days_filed_before_deadline!=null?`${m.days_filed_before_deadline} days`:"—";
-  $("m-penalty").textContent=m.penalty_if_one_year_late_centavos!=null?`${money(m.penalty_if_one_year_late_centavos)} avoided`:"—";
-  $("m-deleted").textContent=m.personal_data_deleted?"Yes":"Not yet";
-  const professional=current.role==="professional"&&current.stage==="await_professional";
-  const owner=current.role==="owner"&&current.stage==="await_owner";
-  $("approval").hidden=!(professional||owner)||current.locked;$("code-row").hidden=!owner;$("owner-code").required=owner;
-  $("approval-title").textContent=professional?"Professional review":"Authorize filing and payment";
-  $("approval-description").textContent=professional?"Confirm that the corrected source, CPA statement and restricted tax assumptions support this exact packet.":"Authorize one simulated filing and one payment of PHP150,000 to SIM-BIR-ESTATE-TAX. This does not authorize eCAR or title transfer.";
-  $("confirm-text").textContent=professional?"I have reviewed the evidence, eligibility, nominal deadline and PHP150,000 calculation.":"I authorize this exact packet and PHP150,000 payment to the verified simulated tax authority.";
-  $("packet-hash").textContent=packetHash?`${packetHash.slice(0,24)}…`:"";
-  $("execution-stage").textContent=current.stage;
-  $("professional-status").textContent=packetHash&&current.professional_hash===packetHash?"Recorded for current packet":"Not recorded for current packet";
-  $("owner-status").textContent=packetHash&&current.owner_hash===packetHash?"Recorded for current packet":"Not recorded for current packet";
-  $("full-packet-hash").textContent=packetHash||"Not prepared";
-  $("filing-key").textContent=current.submission_key||"Not dispatched";
-  $("payment-key").textContent=current.payment_key||"Not dispatched";
-  renderAction();
-  if (document.body.dataset.role !== current.role) {
-    document.body.dataset.role = current.role;
-    applyView();
-  }
-  $("lock").hidden=current.role!=="owner"||current.locked;
-  $("close-case").hidden=current.role!=="owner"||current.stage!=="completed";
-  $("event-count").textContent=`${current.events.length} EVENTS`;$("activity-empty").hidden=current.events.length>0;
-  $("events").replaceChildren(...current.events.slice().reverse().map(event=>{
-    const li=document.createElement("li"),strong=document.createElement("strong"),p=document.createElement("p"),small=document.createElement("small");
-    strong.textContent=event.tool.replaceAll("_"," ");
-    if(event.tool==="classify_intent"){try{const c=JSON.parse(event.result);p.textContent=`${c.intent} · ${c.source}`;}catch{p.textContent="Classification recorded";}}
-    else p.textContent=event.result;
-    small.textContent=`${new Date(event.timestamp).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"})} · ${event.actor}`;
-    li.append(strong,p,small);return li;
+  const data = await api("/api/state"); current = data.case; packetHash = data.packet_hash;
+  const p = place(), packet = current.packet, m = current.metrics || {};
+  document.body.dataset.role = current.role;
+  $("login").hidden = true; $("case-desk").hidden = false; $("logout").hidden = false; $("role-switch").hidden = false;
+  document.querySelectorAll("[data-role]").forEach((b) => { b.disabled = !tokens[b.dataset.role]; b.classList.toggle("active", b.dataset.role === role); b.setAttribute("aria-selected", b.dataset.role === role); });
+  document.querySelectorAll("[data-case]").forEach((b) => b.classList.toggle("active", b.dataset.case === caseId));
+  $("crumb-case").textContent = current.id; $("case-eyebrow").textContent = `CASE ${current.id} · ${p.country}`;
+  $("case-name").textContent = current.label; $("model-mode").textContent = data.mode;
+  const [title, description, chip, step] = stageText();
+  $("stage-title").textContent = title; $("stage-description").textContent = description; $("stage-chip").textContent = chip;
+  document.querySelectorAll("[data-step]").forEach((el, i) => { el.className = i < step ? "done" : i === step ? "current" : ""; el.querySelector("i").textContent = i < step ? "✓" : "—"; });
+  $("locked-banner").hidden = !current.locked || current.stage === "closed";
+  $("due-date").textContent = packet ? `Filing deadline · ${new Date(packet.nominal_due_date + "T00:00").toLocaleDateString(p.locale, {day: "numeric", month: "short", year: "numeric"})}*` : "Filing deadline · set when the packet is prepared";
+  $("question").hidden = !(current.question && current.stage === "ready_to_prepare" && ["operator", "owner"].includes(current.role) && !current.locked);
+  // Tax
+  $("tax-total").textContent = money(packet?.tax_centavos); $("value-label").textContent = p.valueLabel;
+  $("property-value").textContent = current.stage === "closed" ? "—" : money(packet?.property_value_centavos ?? current.property_value_centavos);
+  $("verified-share").textContent = packet ? `${packet.share_bps / 100}%` : "—"; $("gross").textContent = money(packet?.gross_centavos);
+  $("allowance-label").textContent = packet?.allowance_label || "Allowance"; $("allowance").textContent = money(packet?.allowance_centavos);
+  $("net").textContent = money(packet?.net_centavos); $("rate").textContent = packet?.rate_label || "—"; $("tax-fine").textContent = p.taxFine;
+  $("tax-label").textContent = current.professional_hash ? "Professionally reviewed" : packet ? "Prepared · review needed" : "Awaiting evidence";
+  // Evidence
+  $("record-description").textContent = current.stage === "closed" ? "Deleted at case closure" : current.record ? `${p.issuer} ${p.record} · ${current.record.share_bps / 100}% share · intake reported 100%` : "Missing · intake reports 100% ownership";
+  $("record-status").textContent = current.record?.version === 2 ? "Confirmed" : current.record ? "Conflict" : "Needed";
+  $("record-status").className = current.record?.version === 2 ? "good-chip" : "neutral-chip";
+  $("documents").textContent = (current.documents || []).map((d) => d.replace("synthetic_", "").replaceAll("_", " ")).join(", ") || "Deleted at case closure";
+  $("payee").textContent = packet ? `${packet.payee} · simulated ${p.authority}` : `Simulated ${p.authority} tax payee`;
+  // Offices
+  const office = packet?.ecar_office, outbox = current.outbox;
+  $("filing-receipt").textContent = current.filing_receipt || "Not yet verified";
+  $("payment-receipt").textContent = current.payment_receipt || (current.payment_key ? "Pending · not settled" : "Not yet settled");
+  $("office-name").textContent = office ? (office.rdo ? `BIR RDO ${office.rdo} · ${office.name}` : office.name) : current.stage === "closed" ? "Deleted at case closure" : "Set when the packet is prepared";
+  $("office-mailbox").textContent = office?.mailbox || (office ? "None for this step" : "—");
+  $("outbox-status").textContent = outbox ? "Draft ready · not sent" : office && !office.mailbox ? "Not needed" : "Prepared after payment is verified";
+  $("outbox-details").hidden = !outbox; $("outbox-subject").textContent = outbox?.subject || ""; $("outbox-body").textContent = outbox?.body || "";
+  $("open-steps").replaceChildren(...(current.open_steps || []).map((s) => { const li = document.createElement("li"); li.textContent = s; return li; }));
+  $("office-fine").textContent = p.officeFine;
+  // Impact
+  $("m-mismatch").textContent = m.mismatches_caught_before_filing ?? 0; $("m-docs").textContent = m.documents_obtained_by_agent ?? 0;
+  $("m-dupes").textContent = m.duplicate_actions_prevented ?? 0;
+  $("m-days").textContent = m.days_filed_before_deadline != null ? `${m.days_filed_before_deadline} days` : "—";
+  $("m-penalty-label").textContent = p.penaltyLabel;
+  $("m-penalty").textContent = m.penalty_if_one_year_late_centavos != null ? `${money(m.penalty_if_one_year_late_centavos)} avoided` : "—";
+  $("m-deleted").textContent = m.personal_data_deleted ? "Yes" : "Not yet"; $("impact-fine").textContent = p.impactFine;
+  // Approval
+  const professional = current.role === "professional" && current.stage === "await_professional";
+  const owner = current.role === "owner" && current.stage === "await_owner";
+  $("approval").hidden = !(professional || owner) || current.locked; $("code-row").hidden = !owner; $("owner-code").required = owner;
+  $("code-command").textContent = `python3 -m habilin code --case ${current.id}`;
+  $("confirm-text").textContent = professional ? `I reviewed the evidence, assumptions, deadline and the ${money(packet?.tax_centavos)} calculation.`
+    : `I authorize this exact filing and one ${money(packet?.tax_centavos)} payment to the official ${p.authority} payee.`;
+  $("packet-hash").textContent = packetHash ? `${packetHash.slice(0, 24)}…` : "";
+  // Technical
+  $("execution-stage").textContent = current.stage;
+  $("professional-status").textContent = packetHash && current.professional_hash === packetHash ? "Recorded for current packet" : "Not recorded for current packet";
+  $("owner-status").textContent = packetHash && current.owner_hash === packetHash ? "Recorded for current packet" : "Not recorded for current packet";
+  $("full-packet-hash").textContent = packetHash || "Not prepared"; $("filing-key").textContent = current.submission_key || "Not dispatched";
+  $("payment-key").textContent = current.payment_key || "Not dispatched"; $("balance").textContent = money(current.balance_centavos);
+  $("activity-empty").hidden = current.events.length > 0;
+  $("events").replaceChildren(...current.events.slice().reverse().map((event) => {
+    const li = document.createElement("li"), strong = document.createElement("strong"), text = document.createElement("p"), small = document.createElement("small");
+    strong.textContent = event.tool.replaceAll("_", " ");
+    if (event.tool === "classify_intent") { try { const c = JSON.parse(event.result); text.textContent = `${c.intent} · ${c.source}`; } catch { text.textContent = "Classification recorded"; } }
+    else text.textContent = event.result;
+    small.textContent = `${new Date(event.timestamp).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit", second: "2-digit"})} · ${event.actor}`;
+    li.append(strong, text, small); return li;
   }));
+  // Owner controls
+  $("owner-controls").hidden = current.role !== "owner" || current.stage === "closed";
+  $("lock").hidden = current.role !== "owner" || current.locked;
+  $("close-case").hidden = current.role !== "owner" || current.stage !== "completed";
+  renderAction();
 }
+
 async function send(text) {
-  if(busy)return;busy=true;$("send").disabled=true;$("next-action").disabled=true;error("");message(text,"user");$("message").value="";
-  try{const data=await api("/api/message",{text});message(data.reply,"agent",data.classification.source);await refresh();}
-  catch(e){error(e.message);message(e.message,"agent");}
-  finally{busy=false;$("send").disabled=false;if(current)renderAction();}
+  if (busy) return; busy = true; $("send").disabled = true; $("next-action").disabled = true; error(""); message(text, "user"); $("message").value = "";
+  try { const data = await api("/api/message", {text}); message(data.reply, "agent", data.classification.source); await refresh(); }
+  catch (e) { error(e.message); message(e.message, "agent"); }
+  finally { busy = false; $("send").disabled = false; if (current) renderAction(); }
 }
-$("login-form").addEventListener("submit",async(e)=>{e.preventDefault();token=$("token").value.trim();try{await refresh();$("token").value="";error("");}catch(e){token="";error(e.message);}});
-$("logout").addEventListener("click",()=>{token="";current=null;delete document.body.dataset.role;applyView();$("case-desk").hidden=true;$("login").hidden=false;$("logout").hidden=true;$("session-label").textContent="Signed out";$("owner-code").value="";$("confirm").checked=false;$("conversation").replaceChildren();message("This is a new authenticated session. I can check the case or progress its next authorized step.","agent");});
-$("next-action").addEventListener("click",()=>{
-  if(busy||!current)return;
-  if($("next-action").dataset.action==="review") {
-    $("approval").scrollIntoView({block:"center"});$("confirm").focus({preventScroll:true});
-  } else send($("next-action").dataset.action==="progress"?"Progress this estate case":"Check case status");
+async function tool(name, args, after) {
+  if (busy) return; busy = true; error("");
+  try { await api("/api/tool", {name, args}); await refresh(); if (after) message(after, "agent"); }
+  catch (e) { error(e.message); } finally { busy = false; if (current) renderAction(); }
+}
+async function useRole(next) {
+  if (!tokens[next]) return;
+  role = next; remember(); error("");
+  $("owner-code").value = ""; $("confirm").checked = false;
+  try { await refresh(); } catch (e) { error(e.message); }
+}
+
+$("login-form").addEventListener("submit", async (e) => {
+  e.preventDefault(); const token = $("token").value.trim();
+  try {
+    const res = await fetch("/api/state", {headers: {"Authorization": `Bearer ${token}`, "X-Case-Id": caseId}});
+    const data = await res.json(); if (!res.ok) throw new Error(data.error || "Sign-in failed.");
+    tokens[data.case.role] = token; role = data.case.role; remember(); $("token").value = ""; await refresh();
+  } catch (e) { error(e.message); }
 });
-$("message-form").addEventListener("submit",e=>{e.preventDefault();send($("message").value);});
-document.querySelectorAll("[data-message]").forEach(el=>el.addEventListener("click",()=>send(el.dataset.message)));
-$("approval-form").addEventListener("submit",async(e)=>{
-  e.preventDefault();if(busy)return;busy=true;error("");$("approve-button").disabled=true;$("next-action").disabled=true;
-  const owner=current.role==="owner";const args={packet_hash:packetHash,confirmed:$("confirm").checked};if(owner)args.code=$("owner-code").value;
-  try{await api("/api/tool",{name:owner?"owner_approve":"professional_approve",args});$("owner-code").value="";$("confirm").checked=false;await refresh();message(owner?"Owner approval recorded for the exact packet. I can now progress the authorized filing.":"Professional review recorded. The owner has the next decision.","agent");}
-  catch(e){error(e.message);}finally{busy=false;$("approve-button").disabled=false;if(current)renderAction();}
+$("logout").addEventListener("click", () => {
+  tokens = {}; role = null; current = null; remember(); delete document.body.dataset.role;
+  $("case-desk").hidden = true; $("login").hidden = false; $("logout").hidden = true; $("role-switch").hidden = true;
+  $("conversation").replaceChildren(); message("Signed out. Open the demo link or paste a token to continue.", "agent");
 });
-$("lock").addEventListener("click",async()=>{try{await api("/api/tool",{name:"lock",args:{}});await refresh();}catch(e){error(e.message);}});
-$("close-case").addEventListener("click",async()=>{
+document.querySelectorAll("[data-role]").forEach((b) => b.addEventListener("click", () => useRole(b.dataset.role)));
+document.querySelectorAll("[data-case]").forEach((b) => b.addEventListener("click", async () => {
+  if (!role || busy) { caseId = b.dataset.case; remember(); return; }
+  caseId = b.dataset.case; remember(); $("conversation").replaceChildren(); showTab("tax");
+  try { await refresh(); message(`Switched to ${current.label}. Same agent, ${place().authority} rules.`, "agent"); } catch (e) { error(e.message); }
+}));
+document.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
+$("next-action").addEventListener("click", () => { if (!busy && current) send($("next-action").dataset.action === "progress" ? "Progress this estate case" : "Check case status"); });
+$("answer-no").addEventListener("click", () => tool("answer_question", {answer: false}, "Thanks. That deduction does not apply, so I can prepare the packet."));
+$("answer-yes").addEventListener("click", () => tool("answer_question", {answer: true}, "Thanks. That changes the tax, so I stopped the case for a professional."));
+$("message-form").addEventListener("submit", (e) => { e.preventDefault(); send($("message").value); });
+document.querySelectorAll("[data-message]").forEach((el) => el.addEventListener("click", () => send(el.dataset.message)));
+$("approval").addEventListener("submit", (e) => {
+  e.preventDefault(); const owner = current.role === "owner";
+  const args = {packet_hash: packetHash, confirmed: $("confirm").checked}; if (owner) args.code = $("owner-code").value;
+  $("owner-code").value = ""; $("confirm").checked = false;
+  tool(owner ? "owner_approve" : "professional_approve", args, owner ? "Owner approval recorded for the exact packet. Switch to Operator to file it." : "Professional review recorded. The owner decides next.");
+});
+$("lock").addEventListener("click", () => tool("lock", {}));
+$("close-case").addEventListener("click", () => {
   // Two clicks: deletion cannot be undone.
-  if(!$("close-case").dataset.armed){$("close-case").dataset.armed="1";$("close-case").textContent="Click again to permanently delete personal data";return;}
-  try{await api("/api/tool",{name:"close_case",args:{confirmed:true}});await refresh();}catch(e){error(e.message);}
+  if (!$("close-case").dataset.armed) { $("close-case").dataset.armed = "1"; $("close-case").textContent = "Click again to permanently delete personal data"; return; }
+  delete $("close-case").dataset.armed; $("close-case").textContent = "Close case & delete personal data";
+  tool("close_case", {confirmed: true});
 });
-$("download-packet").addEventListener("click",async(e)=>{e.preventDefault();try{const packet=await api("/api/packet"),url=URL.createObjectURL(new Blob([JSON.stringify(packet,null,2)],{type:"application/json"})),a=document.createElement("a");a.href=url;a.download="Habilin-EST-001-Simulated-Packet.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(e){error(e.message);}});
+$("download-packet").addEventListener("click", async (e) => {
+  e.preventDefault();
+  try { const packet = await api("/api/packet"), url = URL.createObjectURL(new Blob([JSON.stringify(packet, null, 2)], {type: "application/json"})), a = document.createElement("a"); a.href = url; a.download = `Habilin-${caseId}-Simulated-Packet.json`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
+  catch (e) { error(e.message); }
+});
+role = ROLES.find((r) => tokens[r]) || null;
+if (role) refresh().catch((e) => { error(e.message); });
