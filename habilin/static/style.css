@@ -212,3 +212,10 @@ footer { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wr
   .topbar { background: var(--bg); backdrop-filter: none; -webkit-backdrop-filter: none; }
 }
 #tax-total.empty { color: var(--ink-3); font-weight: 400; }
+
+.basis { margin-top: 16px; padding: 0; background: none; }
+.basis summary { font-size: 13px; font-weight: 500; color: var(--ink-3); list-style: none; }
+.basis summary::-webkit-details-marker { display: none; }
+.basis summary::before { content: "+ "; }
+.basis[open] summary::before { content: "− "; }
+.basis p { margin-top: 8px; font-size: 12.5px; line-height: 1.5; color: var(--ink-3); }

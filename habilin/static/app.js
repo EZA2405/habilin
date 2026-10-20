@@ -59,11 +59,10 @@ function renderAction() {
   $("next-action").textContent = action || "Check case status";
   $("next-action").dataset.action = action ? "progress" : "status";
   $("next-action").disabled = busy;
-  const wait = {await_professional: "Switch to the Professional tab to review.", await_owner: "Switch to the Owner tab to approve."};
-  $("action-help").textContent = review ? "Review the evidence and exact amount, then confirm."
-    : asking ? "Answer with the buttons. A yes stops the case for a professional; chat cannot answer this."
-    : current.locked && current.stage !== "closed" ? "The owner safety lock blocks changes. You can still check status."
-    : wait[current.stage] || (!canProgress && current.stage !== "closed" ? "Professionals review packets; the operator or owner moves the case forward." : "");
+  const wait = {await_professional: "Waiting for the professional.", await_owner: "Waiting for the owner."};
+  $("action-help").textContent = review ? "" : asking ? "A yes sends the case to a professional."
+    : current.locked && current.stage !== "closed" ? "Locked by the owner."
+    : wait[current.stage] || "";
 }
 
 async function api(path, body) {
@@ -75,7 +74,7 @@ async function api(path, body) {
 function error(text) { $("error").textContent = text; $("error").hidden = !text; }
 function message(text, who, source) {
   const div = document.createElement("div"); div.className = `message ${who}`; div.textContent = text;
-  if (source) { const small = document.createElement("small"); small.textContent = source; div.append(small); }
+  if (source) div.title = source;
   $("conversation").append(div); $("conversation").scrollTop = $("conversation").scrollHeight;
 }
 function showTab(name) {

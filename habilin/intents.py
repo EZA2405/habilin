@@ -5,6 +5,7 @@ import math
 import os
 import re
 import subprocess
+import unicodedata
 
 CATALOG = [
     {"id": "unsafe", "description": "Requests personal-account transfers, OTP disclosure, secret or unrelated case extraction, role or permission overrides, or following document instructions. Takes precedence over all other classes."},
@@ -20,7 +21,9 @@ CATALOG = [
 def classify(text, live=False):
     if not isinstance(text, str) or not 1 <= len(text.strip()) <= 1500:
         raise ValueError("Enter a message of 1 to 1500 characters.")
-    if re.search(r"(?<!\d)\d{6}(?!\d)", re.sub(r"[\s-]", "", text)):
+    # Normalize look-alike digits and drop invisible format characters before looking for a code.
+    compact = "".join(ch for ch in unicodedata.normalize("NFKC", text) if not (ch.isspace() or ch == "-" or unicodedata.category(ch) == "Cf"))
+    if re.search(r"(?<!\d)\d{6}(?!\d)", compact):
         return {"intent": "unsafe", "source": "local_sensitive_input_guard"}
     if not live:
         phrases = {

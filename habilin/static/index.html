@@ -73,7 +73,7 @@
             <div id="code-row" hidden>
               <label for="owner-code">Owner one-time code</label>
               <input id="owner-code" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off" placeholder="••••••">
-              <p class="fine">Get it in a separate terminal: <code id="code-command">python3 -m habilin code</code>. Never send it in chat.</p>
+              <p class="fine">From the owner’s device: <code id="code-command">python3 -m habilin code</code></p>
             </div>
             <button type="submit" id="approve-button" class="primary">Record approval</button>
           </form>
@@ -103,7 +103,7 @@
             <div><dt>Taxable amount</dt><dd id="net">—</dd></div>
             <div><dt>Rate</dt><dd id="rate">—</dd></div>
           </dl>
-          <p class="fine" id="tax-fine"></p>
+          <details class="basis"><summary>Legal basis</summary><p id="tax-fine"></p></details>
         </section>
 
         <section id="evidence" class="panel tab-panel" data-panel="evidence" hidden>
@@ -135,7 +135,7 @@
           </details>
           <h3>Still to do after this milestone</h3>
           <ol id="open-steps" class="open-steps"></ol>
-          <p class="fine" id="office-fine"></p>
+          <details class="basis"><summary>Legal basis</summary><p id="office-fine"></p></details>
         </section>
 
         <section id="impact" class="panel tab-panel" data-panel="impact" hidden>
@@ -147,7 +147,7 @@
             <div><dt id="m-penalty-label">Cost if paid one year late</dt><dd id="m-penalty">—</dd></div>
             <div><dt>Personal data deleted at closure</dt><dd id="m-deleted">Not yet</dd></div>
           </dl>
-          <p class="fine" id="impact-fine">Anonymous counts, kept after the case is closed.</p>
+          <details class="basis"><summary>About these numbers</summary><p id="impact-fine">Anonymous counts, kept after the case is closed.</p></details>
         </section>
 
         <section id="execution" class="panel tab-panel" data-panel="technical" hidden>
@@ -162,7 +162,7 @@
           </dl>
           <h3>Tool trail</h3>
           <ol id="events" class="events"></ol>
-          <p id="activity-empty" class="fine">The recorded tool trail will appear here.</p>
+          <p id="activity-empty" class="fine">No activity yet.</p>
         </section>
       </div>
 
@@ -186,19 +186,17 @@
             <textarea id="message" rows="2" placeholder="Ask in English or Taglish" maxlength="1500" required></textarea>
             <button type="submit" id="send" class="send-button" aria-label="Send message"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13V3M3.5 7.5 8 3l4.5 4.5"/></svg></button>
           </form>
-          <p class="fine model-note">Chat cannot approve, change amounts or redirect money.</p>
         </section>
         <section class="owner-controls" id="owner-controls" hidden>
           <h2>Owner controls</h2>
           <button type="button" id="lock" class="danger-button" hidden>Engage safety lock</button>
           <button type="button" id="close-case" class="danger-button" hidden>Close case &amp; delete personal data</button>
-          <p class="fine">Closing keeps receipts and approval fingerprints as proof, and deletes names, records, documents and messages.</p>
+          <p class="fine">Deletes personal data. Receipts stay as proof.</p>
         </section>
       </aside>
     </div>
   </div>
   <p id="error" class="error" role="alert" hidden></p>
-  <footer>Habilin sandbox prototype · FinTechathon 2026 <span>Simulated institutions. Synthetic people. Professional judgment required.</span></footer>
 </main>
 <script src="/app.js"></script>
 </body>
