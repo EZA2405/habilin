@@ -34,12 +34,15 @@ def main():
         except Rejected as exc:
             parser.exit(1, f"{exc}\n")
     else:
-        server = make_server(args.directory, args.port, args.live_jev)
-        print(f"Habilin at http://127.0.0.1:{server.server_port} · ALL INSTITUTIONS SIMULATED", flush=True)
-        link = "&".join(f"{role}={token}" for role, token in server.tokens.items())
-        print(f"Demo link (all three roles): http://127.0.0.1:{server.server_port}/#{link}", flush=True)
+        try:
+            server = make_server(args.directory, args.port, args.live_jev)
+        except OSError:
+            # Port taken by another app: let the OS pick a free one.
+            server = make_server(args.directory, 0, args.live_jev)
+        url = f"http://127.0.0.1:{server.server_port}"
+        print(f"Habilin at {url} · ALL INSTITUTIONS SIMULATED · opens signed in to the local demo", flush=True)
         if not args.no_open:
-            webbrowser.open(f"http://127.0.0.1:{server.server_port}/#{link}")
+            webbrowser.open(url)
         print(f"Owner one-time code, in a separate terminal: python3 -m habilin code --directory {args.directory} --case EST-001 (or EST-UK-001)", flush=True)
         try:
             server.serve_forever()

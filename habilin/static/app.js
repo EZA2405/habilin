@@ -25,13 +25,8 @@ const $ = (id) => document.getElementById(id);
 const place = () => PLACES[current?.jurisdiction || (caseId === "EST-UK-001" ? "UK" : "PH")];
 const money = (value) => value == null ? "—" : new Intl.NumberFormat(place().locale, {style: "currency", currency: place().currency, maximumFractionDigits: 0}).format(value / 100);
 
-try { tokens = JSON.parse(sessionStorage.getItem("habilin.tokens") || "{}"); caseId = sessionStorage.getItem("habilin.case") || caseId; } catch {}
-const fragment = new URLSearchParams(location.hash.slice(1));
-if (ROLES.some((r) => fragment.get(r))) {
-  ROLES.forEach((r) => { if (fragment.get(r)) tokens[r] = fragment.get(r); });
-  history.replaceState(null, "", location.pathname);
-}
-function remember() { try { sessionStorage.setItem("habilin.tokens", JSON.stringify(tokens)); sessionStorage.setItem("habilin.case", caseId); } catch {} }
+try { caseId = sessionStorage.getItem("habilin.case") || caseId; role = sessionStorage.getItem("habilin.role"); } catch {}
+function remember() { try { sessionStorage.setItem("habilin.case", caseId); sessionStorage.setItem("habilin.role", role); } catch {} }
 
 function stageText() {
   const p = place(), c = current, tax = money(c.packet?.tax_centavos);
@@ -92,7 +87,7 @@ async function refresh() {
   const data = await api("/api/state"); current = data.case; packetHash = data.packet_hash;
   const p = place(), packet = current.packet, m = current.metrics || {};
   document.body.dataset.role = current.role;
-  $("login").hidden = true; $("case-desk").hidden = false; $("logout").hidden = false; $("role-switch").hidden = false;
+  $("case-desk").hidden = false; $("role-switch").hidden = false;
   document.querySelectorAll("[data-role]").forEach((b) => { b.disabled = !tokens[b.dataset.role]; b.classList.toggle("active", b.dataset.role === role); b.setAttribute("aria-selected", b.dataset.role === role); });
   document.querySelectorAll("[data-case]").forEach((b) => b.classList.toggle("active", b.dataset.case === caseId));
   $("crumb-case").textContent = current.id; $("case-eyebrow").textContent = p.country;
@@ -181,22 +176,9 @@ async function useRole(next) {
   try { await refresh(); } catch (e) { error(e.message); }
 }
 
-$("login-form").addEventListener("submit", async (e) => {
-  e.preventDefault(); const token = $("token").value.trim();
-  try {
-    const res = await fetch("/api/state", {headers: {"Authorization": `Bearer ${token}`, "X-Case-Id": caseId}});
-    const data = await res.json(); if (!res.ok) throw new Error(data.error || "Sign-in failed.");
-    tokens[data.case.role] = token; role = data.case.role; remember(); $("token").value = ""; await refresh();
-  } catch (e) { error(e.message); }
-});
-$("logout").addEventListener("click", () => {
-  tokens = {}; role = null; current = null; remember(); delete document.body.dataset.role;
-  $("case-desk").hidden = true; $("login").hidden = false; $("logout").hidden = true; $("role-switch").hidden = true;
-  $("conversation").replaceChildren(); message("Signed out. Open the demo link or paste a token to continue.", "agent");
-});
 document.querySelectorAll("[data-role]").forEach((b) => b.addEventListener("click", () => useRole(b.dataset.role)));
 document.querySelectorAll("[data-case]").forEach((b) => b.addEventListener("click", async () => {
-  if (!role || busy) { caseId = b.dataset.case; remember(); return; }
+  if (busy || b.dataset.case === caseId) return;
   caseId = b.dataset.case; remember(); $("conversation").replaceChildren(); showTab("tax");
   try { await refresh(); message(`Switched to ${current.label}. Same agent, ${place().authority} rules.`, "agent"); } catch (e) { error(e.message); }
 }));
@@ -224,5 +206,11 @@ $("download-packet").addEventListener("click", async (e) => {
   try { const packet = await api("/api/packet"), url = URL.createObjectURL(new Blob([JSON.stringify(packet, null, 2)], {type: "application/json"})), a = document.createElement("a"); a.href = url; a.download = `Habilin-${caseId}-Simulated-Packet.json`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
   catch (e) { error(e.message); }
 });
-role = ROLES.find((r) => tokens[r]) || null;
-if (role) refresh().catch((e) => { error(e.message); });
+// Local demo: one screen plays all three people, so the page signs itself in. Owner approvals still need the one-time code.
+(async () => {
+  try {
+    const res = await fetch("/api/demo-session"), data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    tokens = data.tokens; if (!ROLES.includes(role)) role = "operator"; await refresh();
+  } catch (e) { error(`Could not open the demo case (${e.message || "server unavailable"}). Restart it with: python3 -m habilin serve`); }
+})();

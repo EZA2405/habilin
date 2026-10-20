@@ -51,7 +51,6 @@ code, .mono { font-family: var(--mono); font-size: 0.86em; letter-spacing: 0; }
 .role-switch { display: flex; align-items: center; gap: 8px; }
 .role-label { font-size: 12px; color: var(--ink-3); }
 .sandbox { font-size: 12px; font-weight: 500; color: var(--action); background: var(--action-bg); padding: 4px 9px; border-radius: 999px; white-space: nowrap; }
-.text-button { border: 0; background: none; color: var(--accent); font-size: 13px; padding: 4px; }
 
 /* Buttons */
 .primary, .secondary, .danger-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 18px; border-radius: 10px; font-size: 14px; font-weight: 600; text-decoration: none; transition: transform 160ms var(--ease-out), background-color 160ms ease, opacity 160ms ease; }
@@ -67,16 +66,8 @@ code, .mono { font-family: var(--mono); font-size: 0.86em; letter-spacing: 0; }
   .segmented button:hover:not(.active):not(:disabled) { color: var(--ink); }
 }
 
-/* Login */
-.login { max-width: 520px; margin: 14vh auto 0; padding: 0 24px; }
-.login h1 { font-size: 40px; line-height: 1.08; letter-spacing: -0.03em; font-weight: 700; }
-.lede { margin-top: 14px; font-size: 17px; color: var(--ink-2); }
-#login-form { margin-top: 28px; }
-#login-form label { display: block; font-size: 13px; font-weight: 500; color: var(--ink-2); margin-bottom: 8px; }
-.inline { display: flex; gap: 8px; }
 input[type="password"], input[type="text"], textarea { width: 100%; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--surface); padding: 9px 12px; outline: none; transition: border-color 160ms ease, box-shadow 160ms ease; }
 input:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15); }
-.login .fine { margin-top: 16px; }
 
 /* Desk layout */
 main { max-width: 1360px; margin: 0 auto; padding: 0 24px 32px; }

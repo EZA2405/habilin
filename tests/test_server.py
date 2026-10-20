@@ -70,6 +70,12 @@ class ServerTests(unittest.TestCase):
         for token in self.server.tokens.values():
             self.assertNotIn(token.encode(),raw)
 
+    def test_demo_session_is_local_only(self):
+        status,raw=self.request("/api/demo-session",role=None)
+        self.assertEqual((status,json.loads(raw)["tokens"]),(200,self.server.tokens))
+        self.assertEqual(self.request("/api/demo-session",role=None,Origin="https://attacker.invalid")[0],403)
+        self.assertEqual(self.request("/api/demo-session",role=None,Host="attacker.invalid")[0],403)
+
     def test_origin_and_host_are_checked(self):
         self.assertEqual(self.request("/api/state",Origin="https://attacker.invalid")[0],403)
         self.assertEqual(self.request("/api/state",Host="attacker.invalid")[0],403)

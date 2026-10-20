@@ -22,7 +22,7 @@ const {chromium} = require('playwright');
     const page = await browser.newPage({viewport: {width: 1600, height: 1100}, reducedMotion: 'reduce'});
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    const link = url + '/#' + Object.entries(tokens).map(([r, t]) => `${r}=${t}`).join('&');
+    const link = url + '/';
     async function stage(expected) {
       await page.waitForFunction(expected => document.querySelector('#execution-stage').textContent === expected, expected);
       await page.waitForFunction(() => !document.querySelector('#next-action').disabled);
@@ -60,7 +60,6 @@ const {chromium} = require('playwright');
     }
     await page.goto(link);
     await page.waitForFunction(() => document.body.dataset.role === 'operator');
-    assert.equal(new URL(page.url()).hash, '', 'Tokens must be removed from the address bar');
     await stage('missing_record');
     await fits(page);
     await page.screenshot({path: screenshots + '/start-desktop.png', fullPage: true});
@@ -99,7 +98,7 @@ const {chromium} = require('playwright');
     await mobile.screenshot({path: screenshots + '/mobile.png', fullPage: true});
     await mobile.close();
     assert.deepEqual(errors, []);
-    console.log('PASS: demo link sign-in, role tabs, family-home question, PH and UK cases end to end, office routing, impact, lock, closure, desktop/mobile layouts; no browser errors.');
+    console.log('PASS: automatic local sign-in, role tabs, family-home question, PH and UK cases end to end, office routing, impact, lock, closure, desktop/mobile layouts; no browser errors.');
   } finally { await browser.close(); process.stdin.destroy(); }
 })().catch(error => {console.error(error); process.exitCode = 1;});
 """

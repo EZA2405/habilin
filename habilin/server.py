@@ -47,7 +47,7 @@ def make_server(directory, port=8765, live=False):
             self.end_headers()
             self.wfile.write(data)
 
-        def principal(self):
+        def check_local(self):
             actual_port = self.server.server_port
             allowed_hosts = {f"127.0.0.1:{actual_port}", f"localhost:{actual_port}"}
             if self.headers.get("Host") not in allowed_hosts:
@@ -55,6 +55,9 @@ def make_server(directory, port=8765, live=False):
             origin = self.headers.get("Origin")
             if origin and origin not in {f"http://{h}" for h in allowed_hosts}:
                 raise Rejected("Origin is not allowed.")
+
+        def principal(self):
+            self.check_local()
             token = self.headers.get("Authorization", "").removeprefix("Bearer ")
             if not token.isascii():
                 raise Rejected("A valid ASCII demo session token is required.")
@@ -75,6 +78,11 @@ def make_server(directory, port=8765, live=False):
                 self.respond(200, (STATIC / filename).read_bytes(), mime)
                 return
             try:
+                if path == "/api/demo-session":
+                    # Local demo only: one screen plays all three people. Owner approvals still need the one-time code.
+                    self.check_local()
+                    self.respond(200, {"tokens": tokens})
+                    return
                 principal = self.principal()
                 case = agent.view(principal)
                 if path == "/api/state":

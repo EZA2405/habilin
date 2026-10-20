@@ -58,11 +58,11 @@ python3 -m habilin serve --port 8787              # offline fixture routing
 python3 -m habilin serve --port 8787 --live-jev   # live Jev/TypeSafe classification
 ```
 
-The server opens your browser already signed in (use `--no-open` to skip) and prints the same **demo link**, which signs in all three roles at once. The tokens travel in the URL fragment (never sent to the server as a URL) and are removed from the address bar on load; the page keeps them in this browser tab's session storage until **Sign out** or the tab closes (local demo only). Switch roles with the **Acting as** tabs; switch between the **Philippines** and **United Kingdom** cases in the left sidebar. Every request still carries that role's own token, and the server enforces role and approval checks.
+The server opens your browser straight into the case desk (use `--no-open` to skip). If the port is taken by another app it picks a free one and prints the address. There is no sign-in screen: this is a local demo where one screen plays all three people, so the page fetches the three role tokens from `/api/demo-session`, which answers only on the loopback host and rejects foreign `Host` or `Origin` headers. Switch roles with the **Acting as** tabs and cases with the **PH / UK** switcher at the top. Every request still carries that role's own token, the server enforces role and approval checks, and owner approvals still need the one-time code from a separate terminal.
 
 Walkthrough, for either case:
 
-1. **Operator:** click the green button. The agent fetches the official title record, catches the 50% versus 100% ownership mismatch, then asks one question (PH: was it the family home? UK: does the home pass to children or grandchildren?). Answer **No** to continue; **Yes** stops the case for a professional because the tax would change.
+1. **Operator:** click the main button. The agent fetches the official title record, catches the 50% versus 100% ownership mismatch, then asks one question (PH: was it the family home? UK: does the home pass to children or grandchildren?). Answer **No** to continue; **Yes** stops the case for a professional because the tax would change.
 2. **Operator:** prepare the packet. PH: PHP150,000. UK: GBP50,000.
 3. **Professional:** confirm and record approval.
 4. **Owner:** get a one-time code in a separate terminal and approve:
@@ -72,7 +72,7 @@ Walkthrough, for either case:
 5. **Operator:** click three times: lost filing reply, then confirmed filing and pending payment, then verified payment. The PH case drafts (never sends) an eCAR email to the estate's official BIR district-office mailbox. See the **Offices & next steps** and **Impact** tabs.
 6. **Owner:** optionally lock the case, then **Close case & delete personal data** (two clicks).
 
-Use a new `--directory` for a fresh demo; each holds its own tokens and database. `python3 -m habilin sessions --directory <dir>` prints the tokens again.
+Use a new `--directory` for a fresh demo; each holds its own tokens and database. `python3 -m habilin sessions --directory <dir>` prints the tokens for scripted API use.
 
 ## 5 Testing
 
