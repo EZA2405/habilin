@@ -15,8 +15,8 @@ const PLACES = {
 };
 const TONES = {completed: "good", filed: "good", closed: "good", ready_to_submit: "good", ownership_conflict: "warn", blocked_professional: "warn", filing_unknown: "warn",
                await_professional: "action", await_owner: "action", missing_record: "action", payment_pending: "action"};
-const PEOPLE = {operator: ["Maria Reyes", "Case operator", "MR", "Hi Maria. Press the blue-outlined button to start: I’ll get the official records and prepare the tax. Ask me anything here."],
-  professional: ["Atty. Jose Cruz", "Professional", "JC", "Good day, Atty. Cruz. Your part: check the evidence and the exact amount, then approve. Nothing is filed without you."],
+const PEOPLE = {operator: ["Maria Reyes", "Case operator · paralegal", "MR", "Hi Maria. Press the blue-outlined button to start: I’ll get the official records and prepare the tax. Ask me anything here."],
+  professional: ["Atty. Jose Cruz", "Lawyer / CPA", "JC", "Good day, Atty. Cruz. Your part: check the evidence and the exact amount, then approve. Nothing is filed without you."],
   owner: ["Ana Santos", "Family representative", "AS", "Hi Ana. Nothing is filed or paid until you approve with your one-time code. You can also lock or close the case."]};
 let tokens = {};
 let role = null;
