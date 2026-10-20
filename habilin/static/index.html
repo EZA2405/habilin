@@ -70,6 +70,7 @@
             <span id="stage-chip" class="status-chip">Evidence needed</span>
             <span id="due-date">Filing deadline · set when the packet is prepared</span>
           </div>
+          <p id="turn" class="turn"></p>
           <h2 id="stage-title">Get the ownership record</h2>
           <p id="stage-description"></p>
           <div id="question" class="question" hidden>
@@ -90,6 +91,7 @@
           </form>
         </section>
 
+        <h3 class="details-title">Case details</h3>
         <nav class="tabs" role="tablist" aria-label="Case details">
           <button type="button" role="tab" data-tab="tax" class="active">Tax</button>
           <button type="button" role="tab" data-tab="evidence">Evidence</button>
@@ -180,14 +182,14 @@
       <aside class="agent-column">
         <section class="agent-panel">
           <div class="agent-heading">
-            <h2>Case agent</h2>
+            <h2>Ask Habilin <span class="optional">optional</span></h2>
             <p id="model-mode">Offline fixture routing</p>
           </div>
+          <p class="agent-hint">For questions. The button on the left moves the case.</p>
           <div id="conversation" class="conversation" aria-live="polite">
             <div class="message agent">I can obtain missing evidence, prepare the tax packet and carry out approved steps. I stop whenever a person needs to decide.</div>
           </div>
           <div class="suggestions">
-            <button type="button" data-message="Progress this estate case">Progress case</button>
             <button type="button" data-message="Check case status">Check status</button>
             <button type="button" data-message="Explain the tax">Explain amount</button>
             <button type="button" data-message="Asikasuhin mo ang estate case">Try Taglish</button>

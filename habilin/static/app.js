@@ -15,7 +15,7 @@ const PLACES = {
 };
 const TONES = {completed: "good", filed: "good", closed: "good", ready_to_submit: "good", ownership_conflict: "warn", blocked_professional: "warn", filing_unknown: "warn",
                await_professional: "action", await_owner: "action", missing_record: "action", payment_pending: "action"};
-const PEOPLE = {operator: ["Maria Reyes", "Case operator", "MR", "Hi Maria. Tell me to start and I’ll get the official records and prepare the tax. I’ll stop whenever someone needs to decide."],
+const PEOPLE = {operator: ["Maria Reyes", "Case operator", "MR", "Hi Maria. Press the blue-outlined button to start: I’ll get the official records and prepare the tax. Ask me anything here."],
   professional: ["Atty. Jose Cruz", "Professional", "JC", "Good day, Atty. Cruz. Your part: check the evidence and the exact amount, then approve. Nothing is filed without you."],
   owner: ["Ana Santos", "Family representative", "AS", "Hi Ana. Nothing is filed or paid until you approve with your one-time code. You can also lock or close the case."]};
 let tokens = {};
@@ -66,6 +66,8 @@ function renderAction() {
   $("next-action").textContent = handoff ? `Hand off to ${PEOPLE[needed][0]}` : action || "Check case status";
   $("next-action").dataset.action = handoff ? `switch:${needed}` : action ? "progress" : "status";
   $("next-action").disabled = busy;
+  const short = {operator: "Maria", professional: "Atty. Cruz", owner: "Ana"};
+  $("turn").textContent = current.stage === "closed" ? "" : handoff ? `${short[needed]}’s turn` : (action || review || asking) ? `Your turn, ${short[current.role]}` : "";
   const wait = {await_professional: "Next: a professional reviews the exact amount.", await_owner: "Next: the owner approves with a one-time code."};
   $("action-help").textContent = review ? "" : asking ? "A yes sends the case to a professional."
     : current.locked && current.stage !== "closed" ? "Locked by the owner."

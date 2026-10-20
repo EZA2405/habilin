@@ -251,3 +251,13 @@ footer { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wr
   #print-view td + td { text-align: right; font-variant-numeric: tabular-nums; }
 }
 @media (max-width: 760px) { .portal { padding: 32px 0; } .people { grid-template-columns: 1fr; } .portal h1 { font-size: 32px; } }
+
+.turn { margin-top: 18px; font-size: 15px; font-weight: 600; color: var(--accent); }
+.turn:empty { display: none; }
+.turn + h2 { margin-top: 4px; }
+.next-step { box-shadow: 0 0 0 2px var(--accent), var(--shadow); }
+.details-title { margin-top: 40px; font-size: 13px; font-weight: 600; color: var(--ink-3); }
+.details-title + .tabs { margin-top: 8px; }
+.optional { margin-left: 6px; font-size: 12px; font-weight: 500; color: var(--ink-3); background: var(--sunken); padding: 2px 8px; border-radius: 999px; vertical-align: middle; }
+.agent-hint { padding: 10px 20px 0; font-size: 13px; color: var(--ink-3); }
+@media (min-width: 1081px) { .desk { grid-template-columns: minmax(0, 1fr) 360px; } }
