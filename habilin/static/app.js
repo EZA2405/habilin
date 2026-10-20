@@ -183,9 +183,24 @@ function showPortal(next) {
   document.querySelectorAll("[data-person]").forEach((b) => b.classList.toggle("next", b.dataset.person === next));
   window.scrollTo({top: 0});
 }
+const ONBOARDING = {
+  operator: ["Maria, you run the case", ["Press the highlighted button. Habilin fetches the official records and catches mismatches.", "Answer its one question, then prepare the tax packet.", "Hand off to Atty. Cruz and Ana when Habilin says it is their turn."]],
+  professional: ["Atty. Cruz, you check the numbers", ["Open “Show case details” to see the evidence and the tax math.", "Tick the box to confirm the exact packet, then record approval.", "Nothing is filed or paid without your approval."]],
+  owner: ["Ana, you approve the money", ["Get your one-time code from your own device (a separate terminal in this demo).", "Enter it once to approve filing and payment to the official payee only.", "You can lock the case at any time, and close it to delete personal data."]]};
+function onboard(person) {
+  let seen = false; try { seen = sessionStorage.getItem("habilin.onboarded." + person) === "1"; } catch {}
+  $("onboarding").hidden = seen;
+  if (seen) return;
+  $("onb-title").textContent = ONBOARDING[person][0];
+  $("onb-steps").replaceChildren(...ONBOARDING[person][1].map((s) => { const li = document.createElement("li"); li.textContent = s; return li; }));
+}
+function toggleChat(open) {
+  $("chat-widget").hidden = !open; $("chat-toggle").hidden = open; $("chat-toggle").setAttribute("aria-expanded", String(open));
+  if (open) $("message").focus();
+}
 async function signIn(person) {
   $("conversation").replaceChildren(); message(PEOPLE[person][3], "agent");
-  await useRole(person); window.scrollTo({top: 0});
+  await useRole(person); onboard(person); window.scrollTo({top: 0});
 }
 async function useRole(next) {
   if (!tokens[next]) return;
@@ -249,3 +264,6 @@ $("download-packet").addEventListener("click", (e) => {
 })();
 $("switch-user").addEventListener("click", () => showPortal());
 document.querySelectorAll("[data-person]").forEach((b) => b.addEventListener("click", () => signIn(b.dataset.person)));
+$("onb-done").addEventListener("click", () => { try { sessionStorage.setItem("habilin.onboarded." + role, "1"); } catch {} $("onboarding").hidden = true; });
+$("chat-toggle").addEventListener("click", () => toggleChat(true));
+$("chat-close").addEventListener("click", () => toggleChat(false));

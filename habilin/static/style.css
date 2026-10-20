@@ -261,3 +261,23 @@ footer { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wr
 .optional { margin-left: 6px; font-size: 12px; font-weight: 500; color: var(--ink-3); background: var(--sunken); padding: 2px 8px; border-radius: 999px; vertical-align: middle; }
 .agent-hint { padding: 10px 20px 0; font-size: 13px; color: var(--ink-3); }
 @media (min-width: 1081px) { .desk { grid-template-columns: minmax(0, 1fr) 360px; } }
+
+/* Simplified desk: one column, details collapsed, chat as a floating widget. */
+.desk, .desk { grid-template-columns: minmax(0, 860px) !important; justify-content: center; }
+.onboarding { padding: 24px; margin-bottom: 20px; background: var(--surface); border-radius: 18px; box-shadow: var(--shadow); border: 2px solid var(--accent); }
+.onboarding h2 { font-size: 22px; margin: 4px 0 12px; }
+.onb-steps { margin: 0 0 18px; padding-left: 20px; display: grid; gap: 8px; }
+.case-details { margin-top: 24px; }
+.case-details > summary { cursor: pointer; font-weight: 600; padding: 14px 18px; background: var(--surface); border-radius: 14px; box-shadow: var(--shadow); list-style-position: inside; }
+.case-details[open] > summary { margin-bottom: 14px; }
+.case-details > summary .fine { font-weight: 400; margin-left: 8px; }
+.owner-controls { margin-top: 20px; }
+.chat-launcher { position: fixed; right: 24px; bottom: 24px; z-index: 40; display: inline-flex; align-items: center; gap: 8px; height: 48px; padding: 0 20px; border: 0; border-radius: 999px; background: var(--ink); color: #fff; font-size: 15px; font-weight: 600; box-shadow: var(--shadow); cursor: pointer; }
+.chat-launcher svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linejoin: round; }
+.chat-launcher[hidden], .chat-widget[hidden] { display: none !important; }
+.chat-widget, body[data-role="owner"] .chat-widget { position: fixed; right: 24px; bottom: 24px; z-index: 41; width: min(380px, calc(100vw - 32px)); height: min(560px, calc(100dvh - 120px)); min-height: 0; }
+.agent-heading { position: relative; }
+.chat-close { position: absolute; top: 12px; right: 14px; font-size: 16px; }
+@media (max-width: 640px) { .chat-launcher { right: 16px; bottom: 16px; } .chat-widget, body[data-role="owner"] .chat-widget { right: 16px; bottom: 16px; } }
+@media print { .chat-launcher, .chat-widget, .onboarding { display: none !important; } }
+.chat-widget .agent-heading { padding-right: 48px; }

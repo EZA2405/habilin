@@ -47,6 +47,12 @@
   <div id="case-desk" hidden>
     <div class="desk">
       <div class="case-column">
+        <section id="onboarding" class="onboarding" hidden aria-labelledby="onb-title">
+          <p class="turn">Welcome</p>
+          <h2 id="onb-title"></h2>
+          <ol id="onb-steps" class="onb-steps"></ol>
+          <button type="button" id="onb-done" class="primary">Got it, show my case</button>
+        </section>
         <div class="case-heading">
           <div>
             <p class="case-meta"><span id="crumb-case" class="mono">EST-001</span><span id="case-eyebrow">Philippine estate tax</span></p>
@@ -91,7 +97,8 @@
           </form>
         </section>
 
-        <h3 class="details-title">Case details</h3>
+        <details id="case-details" class="case-details">
+        <summary>Show case details <span class="fine">tax math, evidence, offices, impact, technical</span></summary>
         <nav class="tabs" role="tablist" aria-label="Case details">
           <button type="button" role="tab" data-tab="tax" class="active">Tax</button>
           <button type="button" role="tab" data-tab="evidence">Evidence</button>
@@ -177,15 +184,25 @@
           <ol id="events" class="events"></ol>
           <p id="activity-empty" class="fine">No activity yet.</p>
         </section>
+        </details>
+        <section class="owner-controls" id="owner-controls" hidden>
+          <h2>Owner controls</h2>
+          <button type="button" id="lock" class="danger-button" hidden>Engage safety lock</button>
+          <button type="button" id="close-case" class="danger-button" hidden>Close case &amp; delete personal data</button>
+          <p class="fine">Deletes personal data. Receipts stay as proof.</p>
+        </section>
       </div>
-
-      <aside class="agent-column">
-        <section class="agent-panel">
+    </div>
+    <button type="button" id="chat-toggle" class="chat-launcher" aria-expanded="false" aria-controls="chat-widget">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z"/></svg>Ask Habilin
+    </button>
+        <section id="chat-widget" class="agent-panel chat-widget" hidden aria-label="Ask Habilin">
           <div class="agent-heading">
             <h2>Ask Habilin <span class="optional">optional</span></h2>
             <p id="model-mode">Offline fixture routing</p>
+            <button type="button" id="chat-close" class="link-button chat-close" aria-label="Close chat">✕</button>
           </div>
-          <p class="agent-hint">For questions. The button on the left moves the case.</p>
+          <p class="agent-hint">For questions. The highlighted button on the page moves the case.</p>
           <div id="conversation" class="conversation" aria-live="polite">
             <div class="message agent">I can obtain missing evidence, prepare the tax packet and carry out approved steps. I stop whenever a person needs to decide.</div>
           </div>
@@ -200,14 +217,6 @@
             <button type="submit" id="send" class="send-button" aria-label="Send message"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13V3M3.5 7.5 8 3l4.5 4.5"/></svg></button>
           </form>
         </section>
-        <section class="owner-controls" id="owner-controls" hidden>
-          <h2>Owner controls</h2>
-          <button type="button" id="lock" class="danger-button" hidden>Engage safety lock</button>
-          <button type="button" id="close-case" class="danger-button" hidden>Close case &amp; delete personal data</button>
-          <p class="fine">Deletes personal data. Receipts stay as proof.</p>
-        </section>
-      </aside>
-    </div>
   </div>
   <p id="error" class="error" role="alert" hidden></p>
 </main>
