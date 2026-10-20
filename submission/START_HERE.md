@@ -9,7 +9,7 @@ The official working cutoff is **20 October 2026, 23:59 Manila time**. Registrat
 | Material | File | What remains |
 | --- | --- | --- |
 | Registration workbook | Registration-TO-FILL.xlsx | Fill member rows privately; it is an unchanged official blank template |
-| English technical document | Habilin-Technical-Document.docx | Replace TEAM NAME TO COMPLETE; confirm topic |
+| English technical document | Habilin-Technical-Document.docx | Team Caelus filled in; confirm topic |
 | Presentation up to 10 minutes | Habilin-Presentation.pptx and Habilin-Presentation.pdf | 10 slides, about 8 minutes; speaker notes in Habilin-Presentation-Speaker-Notes.md |
 | Demo video up to 5 minutes | InternationalAI-Habilin-DemoVideo.mp4 | 1 min 35 s, 1920×1080, burned-in English captions, AI voice narration: real news headlines from five countries, the Philippine problem, then the actual app recorded from a fresh server (clips sped up to match narration), close |
 
@@ -38,7 +38,7 @@ The video guide is supporting production guidance and does not replace the MP4. 
 
 ## Run the agent
 
-From the repository or extracted source ZIP: `python3 -m habilin serve --port 8787`. Open `http://127.0.0.1:8787`. Obtain tokens in a separate terminal with `python3 -m habilin sessions`. The default is an explicitly labelled offline rehearsal. Add `--live-jev` with the configured TypeSafe MCP command for actual semantic classification. Full instructions are in [README](../README.md).
+From the repository or extracted source ZIP: `python3 -m habilin serve --port 8787`. Open `http://127.0.0.1:8787`. Pick a person on the sign-in screen. The default is an explicitly labelled offline rehearsal. Add `--live-jev` with the configured TypeSafe MCP command for actual semantic classification. Full instructions are in [README](../README.md).
 
 As operator progress the case. As professional confirm the exact packet. As owner confirm filing/payment and enter a code from `python3 -m habilin code` in the masked form. As operator progress three times: unknown filing → confirmed filing and pending payment → verified settled payment. Run `python3 -m unittest discover -s tests -v` for the scripted suite and `python3 scripts/replay_demo.py --output .build/replay.json` for an offline tool replay.
 
