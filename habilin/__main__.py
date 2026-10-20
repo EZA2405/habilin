@@ -1,5 +1,4 @@
 import argparse
-import json
 import os
 import webbrowser
 from pathlib import Path

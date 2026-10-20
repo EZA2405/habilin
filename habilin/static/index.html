@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -29,7 +29,7 @@
       </div>
     </div>
     <span class="sandbox" title="No real government, bank or registry is connected">Simulated institutions</span>
-    <button id="logout" class="text-button" hidden>Sign out</button>
+    <button type="button" id="logout" class="text-button" hidden>Sign out</button>
   </div>
 </header>
 
@@ -41,7 +41,7 @@
       <label for="token">Or paste one role token</label>
       <div class="inline">
         <input id="token" type="password" required autocomplete="off" placeholder="From: python3 -m habilin sessions">
-        <button class="primary">Open case</button>
+        <button type="submit" class="primary">Open case</button>
       </div>
     </form>
     <p class="fine">Synthetic records only. No real filings, payments or emails.</p>
@@ -89,14 +89,14 @@
               <input id="owner-code" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off" placeholder="••••••">
               <p class="fine">Get it in a separate terminal: <code id="code-command">python3 -m habilin code</code>. Never send it in chat.</p>
             </div>
-            <button id="approve-button" class="primary">Record approval</button>
+            <button type="submit" id="approve-button" class="primary">Record approval</button>
           </form>
         </section>
 
         <nav class="tabs" role="tablist" aria-label="Case details">
           <button type="button" role="tab" data-tab="tax" class="active">Tax</button>
           <button type="button" role="tab" data-tab="evidence">Evidence</button>
-          <button type="button" role="tab" data-tab="office">Offices & next steps</button>
+          <button type="button" role="tab" data-tab="office">Offices &amp; next steps</button>
           <button type="button" role="tab" data-tab="impact">Impact</button>
           <button type="button" role="tab" data-tab="technical">Technical</button>
         </nav>
@@ -190,22 +190,22 @@
             <div class="message agent">I can obtain missing evidence, prepare the tax packet and carry out approved steps. I stop whenever a person needs to decide.</div>
           </div>
           <div class="suggestions">
-            <button data-message="Progress this estate case">Progress case</button>
-            <button data-message="Check case status">Check status</button>
-            <button data-message="Explain the tax">Explain amount</button>
-            <button data-message="Asikasuhin mo ang estate case">Try Taglish</button>
+            <button type="button" data-message="Progress this estate case">Progress case</button>
+            <button type="button" data-message="Check case status">Check status</button>
+            <button type="button" data-message="Explain the tax">Explain amount</button>
+            <button type="button" data-message="Asikasuhin mo ang estate case">Try Taglish</button>
           </div>
           <form id="message-form">
             <label class="sr-only" for="message">Message your case agent</label>
             <textarea id="message" rows="2" placeholder="Ask in English or Taglish" maxlength="1500" required></textarea>
-            <button id="send" class="send-button" aria-label="Send message"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13V3M3.5 7.5 8 3l4.5 4.5"/></svg></button>
+            <button type="submit" id="send" class="send-button" aria-label="Send message"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13V3M3.5 7.5 8 3l4.5 4.5"/></svg></button>
           </form>
           <p class="fine model-note">Chat cannot approve, change amounts or redirect money.</p>
         </section>
         <section class="owner-controls" id="owner-controls" hidden>
           <h2>Owner controls</h2>
-          <button id="lock" class="danger-button" hidden>Engage safety lock</button>
-          <button id="close-case" class="danger-button" hidden>Close case &amp; delete personal data</button>
+          <button type="button" id="lock" class="danger-button" hidden>Engage safety lock</button>
+          <button type="button" id="close-case" class="danger-button" hidden>Close case &amp; delete personal data</button>
           <p class="fine">Closing keeps receipts and approval fingerprints as proof, and deletes names, records, documents and messages.</p>
         </section>
       </aside>

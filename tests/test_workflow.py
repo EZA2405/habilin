@@ -1,7 +1,6 @@
 import tempfile
 import unittest
 import json
-import sqlite3
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
